@@ -142,8 +142,8 @@
     <string name="explore_summary">Resumo</string>
     <string name="explore_over_visible_window">Sobre a janela visível</string>
     <string name="explore_n_pts">%1$d pontos</string>
-    <string name="explore_vs_prev_window">versus anterior %1$s</string>
-    <string name="explore_all_history">toda a histórico</string>
+    <string name="explore_vs_prev_window">vs. %1$s anterior</string>
+    <string name="explore_all_history">todo o histórico</string>
     <string name="explore_no_prior_window">sem %1$s anterior</string>
     <string name="explore_empty_metric">Nenhum %1$s registado ainda. Sincronize a tua bracelete para preencher esta tendência.</string>
     <string name="explore_single_reading">Apenas uma leitura no intervalo – amplie a janela para ver uma tendência.</string>

@@ -190448,7 +190448,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "toda a histórico"
+            "value": "todo o histórico"
           }
         },
         "ru": {
@@ -190506,7 +190506,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "o tempo todo"
+            "value": "todo o período"
           }
         },
         "ru": {
@@ -195282,7 +195282,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "month"
+            "value": "mês"
           }
         },
         "ru": {
@@ -198121,7 +198121,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "quarter"
+            "value": "trimestre"
           }
         },
         "ru": {
@@ -201643,7 +201643,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "versus anterior %@"
+            "value": "vs. %@ anterior"
           }
         },
         "ru": {
@@ -201933,7 +201933,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "week"
+            "value": "semana"
           }
         },
         "ru": {
@@ -202049,7 +202049,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "year"
+            "value": "ano"
           }
         },
         "ru": {
