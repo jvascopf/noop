@@ -52430,7 +52430,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El coach usa tu propia clave de API. Elige un proveedor, bracelete una clave y selecciona un modelo. Tu clave se guarda de forma segura en el Llavero y nunca sale de %@ salvo en la solicitud que tú haces."
+            "value": "El coach usa tu propia clave de API. Elige un proveedor, pega una clave y selecciona un modelo. Tu clave se guarda de forma segura en el Llavero y nunca sale de %@ salvo en la solicitud que tú haces."
           }
         },
         "fr": {
@@ -52495,7 +52495,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El Entrenador usa tu propia clave de API. Elige un proveedor, bracelete una clave y elige un modelo. Tu clave se almacena de forma segura en el Llavero de macOS y nunca sale de tu Mac salvo como la solicitud que tú haces."
+            "value": "El Entrenador usa tu propia clave de API. Elige un proveedor, pega una clave y elige un modelo. Tu clave se almacena de forma segura en el Llavero de macOS y nunca sale de tu Mac salvo como la solicitud que tú haces."
           }
         },
         "fr": {
@@ -124305,7 +124305,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bracelete tu clave de API de %@"
+            "value": "Pega tu clave de API de %@"
           }
         },
         "fr": {
@@ -219069,7 +219069,7 @@
     } },
     "Paste the corrected key. Your conversation is kept." : { "localizations" : {
         "de": {"stringUnit": {"state": "translated", "value": "Füge den korrigierten Schlüssel ein. Deine Unterhaltung bleibt erhalten."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Bracelete la clave corregida. Tu conversación se conserva."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pega la clave corregida. Tu conversación se conserva."}},
         "fr": {"stringUnit": {"state": "translated", "value": "Collez la clé corrigée. Votre conversation est conservée."}},
         "it": {"stringUnit": {"state": "translated", "value": "Incolla la chiave corretta. La tua conversazione viene mantenuta."}},
         "pl": {"stringUnit": {"state": "translated", "value": "Wklej poprawiony klucz. Twoja rozmowa zostanie zachowana."}},
