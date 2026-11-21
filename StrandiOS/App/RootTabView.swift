@@ -115,13 +115,17 @@ struct RootTabView: View {
     /// swipe to change DAYS, and Coach because its suggestion row scrolls sideways and its composer
     /// takes drags for text selection: a simultaneous ancestor drag read both as tab switches. Both
     /// thresholds are unchanged from the original gesture.
+    ///
+    /// The step walks the VISIBLE tabs (`TabSwipe`): stepping the raw tag landed on tag 3 whenever the
+    /// Coach tab was switched off, which no tab claims, so a swipe from Sleep showed a blank tab.
     private var tabSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 24)
             .onEnded { v in
                 guard tabSwipeEnabled else { return }
                 let dx = v.translation.width, dy = v.translation.height
                 guard abs(dx) > 60, abs(dx) > abs(dy) * 1.6 else { return }
-                let next = min(4, max(0, selectedTab + (dx < 0 ? 1 : -1)))
+                let next = TabSwipe.target(from: selectedTab, forward: dx < 0,
+                                           visible: TabSwipe.visibleTags(coachShown: coachEnabled))
                 if next != selectedTab {
                     withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.24)) { selectedTab = next }
                 }
