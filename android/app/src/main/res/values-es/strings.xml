@@ -2905,4 +2905,10 @@
         <item quantity="one">La semana pasada solo tuvo %1$d día de datos, así que los cambios semanales son aproximados, no una tendencia.</item>
         <item quantity="other">La semana pasada solo tuvo %1$d días de datos, así que los cambios semanales son aproximados, no una tendencia.</item>
     </plurals>
+    <string name="stress_lenses_last_night">anoche · ventanas de 5 min</string>
+    <string name="stress_lfhf_ratio">Cociente LF/HF</string>
+    <string name="stress_lfhf_caption">Potencia de la VFC de baja frente a alta frecuencia durante el sueño. Depende de la respiración y de los reflejos de la presión arterial, así que no es una medida pura del estrés.</string>
+    <string name="stress_lenses_footnote">Lecturas de VFC adicionales del sueño de anoche: la mediana de sus ventanas de 5 minutos (la duración de registro que asumen ambos métodos). Solo informativas; no cambian la puntuación de estrés de arriba.</string>
+    <string name="stress_baevsky_caption">Rigidez de tu ritmo cardiaco durante el sueño. En reposo, lo típico es entre 50 y 150; mucho más alto indica un ritmo rígido y estresado.</string>
+    <string name="stress_methodology_v2">Comparamos la FC en reposo de anoche y tu tendencia de VFC de 7 días con los 30 días anteriores. Los cambios pequeños dentro de tu variación normal de una noche a otra cuentan como un día normal; más allá, una FC en reposo más alta y una VFC más baja suben la puntuación. Las dos desviaciones se promedian en una escala de 0-3: 0 es calma, 1,5 es tu línea base y 3 es muy activado. Refleja la carga física (entrenamiento, enfermedad, alcohol, poco sueño) tanto como el estrés mental.</string>
 </resources>

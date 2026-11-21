@@ -2934,4 +2934,10 @@
         <item quantity="one">Last week only had %1$d day of data, so week-over-week changes are rough, not a trend.</item>
         <item quantity="other">Last week only had %1$d days of data, so week-over-week changes are rough, not a trend.</item>
     </plurals>
+    <string name="stress_lenses_last_night">last night · 5-min windows</string>
+    <string name="stress_lfhf_ratio">LF/HF ratio</string>
+    <string name="stress_lfhf_caption">Low- vs high-frequency HRV power during sleep. Shaped by breathing and blood-pressure reflexes, so not a pure stress measure.</string>
+    <string name="stress_lenses_footnote">Extra HRV lenses from last night\'s sleep, the median of its 5-minute windows (the recording length both methods assume). Informational only; they do not change the stress score above.</string>
+    <string name="stress_baevsky_caption">Rigidity of your heart rhythm during sleep. At rest about 50–150 is typical; much higher means a rigid, stressed rhythm.</string>
+    <string name="stress_methodology_v2">We compare last night\'s resting heart rate and your 7-day HRV trend with the 30 days before. Small changes inside your normal night-to-night range count as a normal day; beyond it, a higher resting HR and a lower HRV push the score up. The two shifts are averaged onto a 0-3 scale: 0 is calm, 1.5 sits at your baseline, 3 is highly activated. It reflects physical load (training, illness, alcohol, short sleep) as much as mental stress.</string>
 </resources>

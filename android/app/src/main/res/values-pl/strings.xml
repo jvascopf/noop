@@ -2927,4 +2927,10 @@
         <item quantity="many">W zeszłym tygodniu było tylko %1$d dni danych, więc zmiany tydzień do tygodnia są przybliżone, a nie trendem.</item>
         <item quantity="other">W zeszłym tygodniu było tylko %1$d dni danych, więc zmiany tydzień do tygodnia są przybliżone, a nie trendem.</item>
     </plurals>
+    <string name="stress_lenses_last_night">ostatnia noc · okna 5-min</string>
+    <string name="stress_lfhf_ratio">Stosunek LF/HF</string>
+    <string name="stress_lfhf_caption">Moc HRV niskiej i wysokiej częstotliwości podczas snu. Zależy od oddechu i odruchów ciśnienia krwi, więc nie jest czystą miarą stresu.</string>
+    <string name="stress_lenses_footnote">Dodatkowe odczyty HRV ze snu ostatniej nocy: mediana jego 5-minutowych okien (długość zapisu, którą zakładają obie metody). Tylko informacyjnie; nie zmieniają wyniku stresu powyżej.</string>
+    <string name="stress_baevsky_caption">Sztywność rytmu serca podczas snu. W spoczynku typowo około 50–150; znacznie wyżej oznacza sztywny, zestresowany rytm.</string>
+    <string name="stress_methodology_v2">Porównujemy tętno spoczynkowe z ostatniej nocy i 7-dniowy trend HRV z 30 dniami wcześniej. Małe zmiany w granicach normalnej zmienności między nocami liczą się jako zwykły dzień; powyżej nich wyższe tętno spoczynkowe i niższe HRV podnoszą wynik. Oba odchylenia są uśredniane na skali 0-3: 0 to spokój, 1,5 to Twoja linia bazowa, 3 to silne pobudzenie. Wynik odzwierciedla obciążenie fizyczne (trening, choroba, alkohol, krótki sen) w równym stopniu co stres psychiczny.</string>
 </resources>

@@ -2904,4 +2904,10 @@
         <item quantity="one">La semaine dernière n\'avait qu\'%1$d jour de données, donc les écarts d\'une semaine à l\'autre sont approximatifs, pas une tendance.</item>
         <item quantity="other">La semaine dernière n\'avait que %1$d jours de données, donc les écarts d\'une semaine à l\'autre sont approximatifs, pas une tendance.</item>
     </plurals>
+    <string name="stress_lenses_last_night">nuit dernière · fenêtres de 5 min</string>
+    <string name="stress_lfhf_ratio">Rapport LF/HF</string>
+    <string name="stress_lfhf_caption">Puissance de la VFC basse vs haute fréquence pendant le sommeil. Influencée par la respiration et les réflexes de pression artérielle, ce n\'est donc pas une mesure pure du stress.</string>
+    <string name="stress_lenses_footnote">Mesures de VFC supplémentaires issues du sommeil de la nuit dernière : la médiane de ses fenêtres de 5 minutes (la durée d\'enregistrement que supposent les deux méthodes). À titre indicatif ; elles ne changent pas le score de stress ci-dessus.</string>
+    <string name="stress_baevsky_caption">Rigidité de ton rythme cardiaque pendant le sommeil. Au repos, environ 50 à 150 est typique ; bien plus haut signale un rythme rigide et stressé.</string>
+    <string name="stress_methodology_v2">Nous comparons ta FC au repos de la nuit dernière et ta tendance de VFC sur 7 jours aux 30 jours précédents. Les petits écarts dans ta variation normale d\'une nuit à l\'autre comptent comme une journée normale ; au-delà, une FC au repos plus haute et une VFC plus basse font monter le score. Les deux écarts sont moyennés sur une échelle de 0-3 : 0 est calme, 1,5 correspond à ta référence, 3 est très activé. Il reflète la charge physique (entraînement, maladie, alcool, sommeil court) autant que le stress mental.</string>
 </resources>

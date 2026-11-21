@@ -22,14 +22,9 @@ func stressActivityMaskedHoursCaption(_ count: Int) -> String? {
 // Source of the daily 0–3 value, in priority order:
 //   1. The persisted `stress` metric series ("my-whoop") via `repo.series` — if a
 //      day has a stored stress value we trust it.
-//   2. Otherwise we DERIVE it from how today's resting HR / HRV sit against a
-//      personal 30-day baseline. Stress shows up as HIGHER resting HR and LOWER
-//      HRV, so we sum two z-scores and squash onto 0–3 with a logistic curve:
-//
-//        zRHR = (todayRHR − meanRHR) / sdRHR        // positive when RHR is UP
-//        zHRV = (meanHRV − todayHRV) / sdHRV        // positive when HRV is DOWN
-//        raw  = zRHR + zHRV                          // combined autonomic load
-//        stress = 3 / (1 + e^(−raw))                // 0 calm · 1.5 baseline · 3 high
+//   2. Otherwise `DailyStressScore` derives it (personal fork): last night's resting HR and the 7-day
+//      ln(rMSSD) against the 30 days before, each shrunk by a ±0.5 SD neutral band, averaged, and
+//      squashed onto 0–3 (0 calm · 1.5 baseline · 3 high). See that file for the method.
 //
 // Bands:  0–1 LOW · 1–2 MEDIUM · 2–3 HIGH.
 //
@@ -192,9 +187,22 @@ struct StressView: View {
         // main actor and publish when done; their card is hidden until then, exactly as it is when a gate
         // is unmet. Same `runUnescalated` reasoning as above, and the default `.utility` is real here
         // because nothing escalates it: this is the phase that must yield to the UI.
+        // Personal fork: both lenses assume short, stationary recordings, so they are read from the most
+        // recent sleep session in 5-minute windows (`NocturnalHRVLenses`), not from every beat since midnight.
+        guard let sessions = await StressLoadCancellation.read({
+            await repo.sleepSessions(from: to - 36 * 3600, to: to)
+        }) else { return }
+        guard let night = sessions.filter({ $0.endTs > $0.startTs }).max(by: { $0.endTs < $1.endTs }) else {
+            stressIndex = nil
+            freqHRV = nil
+            return
+        }
+        guard let nightRR = await StressLoadCancellation.read({
+            await repo.rrIntervals(from: night.startTs, to: night.endTs, limit: 200_000)
+        }) else { return }
         guard let advanced = await StressLoadCancellation.read({
             await runUnescalated {
-                (index: StressIndex.components(rr: rr), freq: HRVFreqDomain.freqDomain(rr: rr))
+                NocturnalHRVLenses.compute(rr: nightRR, from: night.startTs, to: night.endTs)
             }
         }) else { return }
         stressIndex = advanced.index
@@ -476,7 +484,7 @@ struct StressView: View {
                 HStack {
                     Text("Advanced HRV").strandOverline()
                     Spacer()
-                    Text("on demand · today's R-R")
+                    Text("last night · 5-min windows")
                         .font(StrandFont.footnote)
                         .foregroundStyle(StrandPalette.textTertiary)
                 }
@@ -491,7 +499,7 @@ struct StressView: View {
                         StatTile(
                             label: "Baevsky Stress Index",
                             value: "\(Int(si.si.rounded()))",
-                            caption: String(localized: "Autonomic rigidity from your heart-rate rhythm. Higher means a more rigid, stressed rhythm."),
+                            caption: String(localized: "Rigidity of your heart rhythm during sleep. At rest about 50–150 is typical; much higher means a rigid, stressed rhythm."),
                             accent: StressRamp.tense
                         )
                     }
@@ -501,9 +509,9 @@ struct StressView: View {
                     if let f = freqHRV {
                         if let ratio = f.lfhf {
                             StatTile(
-                                label: "Autonomic balance (LF/HF)",
+                                label: "LF/HF ratio",
                                 value: StressTrace.formatRatio(ratio),
-                                caption: String(localized: "Sympathetic vs parasympathetic tone from frequency-domain HRV. Higher leans sympathetic (stress-ward)."),
+                                caption: String(localized: "Low- vs high-frequency HRV power during sleep. Shaped by breathing and blood-pressure reflexes, so not a pure stress measure."),
                                 accent: StressRamp.steady
                             )
                         } else if f.hf > 0 {
@@ -517,7 +525,7 @@ struct StressView: View {
                     }
                 }
 
-                Text("These are extra, on-demand HRV lenses computed from today's R-R intervals. They are informational and do not change the stress score above.")
+                Text("Extra HRV lenses from last night's sleep, the median of its 5-minute windows (the recording length both methods assume). Informational only; they do not change the stress score above.")
                     .font(StrandFont.footnote)
                     .foregroundStyle(StrandPalette.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -677,7 +685,7 @@ struct StressView: View {
                      : "Stress is derived from two autonomic signals.")
                     .font(StrandFont.body)
                     .foregroundStyle(StrandPalette.textPrimary)
-                Text("We compare today's resting heart rate and HRV to your own 30-day baseline. A higher-than-usual resting HR and a lower-than-usual HRV both push the score up, classic signs the body is activated. The combined shift is mapped onto a 0-3 scale: 0 is calm, 1.5 sits at your baseline, 3 is highly activated.")
+                Text("We compare last night's resting heart rate and your 7-day HRV trend with the 30 days before. Small changes inside your normal night-to-night range count as a normal day; beyond it, a higher resting HR and a lower HRV push the score up. The two shifts are averaged onto a 0-3 scale: 0 is calm, 1.5 sits at your baseline, 3 is highly activated. It reflects physical load (training, illness, alcohol, short sleep) as much as mental stress.")
                     .font(StrandFont.subhead)
                     .foregroundStyle(StrandPalette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -868,40 +876,22 @@ struct StressModel {
         else { return nil }   // no days at all
         let today = days[idx]
 
-        // Baseline window: up to 30 days ending the day BEFORE the scored day, so it's measured
-        // against its own recent past rather than itself.
-        let baseline = idx > 0 ? Array(days[0..<idx].suffix(30)) : []
+        // Derived score (personal fork): `DailyStressScore` reads the 7-day ln(rMSSD) and the night's resting HR
+        // against the 30 days before, with a neutral band and the two deviations averaged. See its header.
+        let nights = days.map { DailyStressScore.Night(restingHr: $0.restingHr, avgHrv: $0.avgHrv) }
+        let derived = DailyStressScore.score(nights, at: idx)
 
-        let rhrBase = baseline.compactMap { $0.restingHr }.map(Double.init)
-        let hrvBase = baseline.compactMap { $0.avgHrv }
-
-        let meanRHR = StressMath.mean(rhrBase)
-        let sdRHR   = StressMath.std(rhrBase, mean: meanRHR)
-        let meanHRV = StressMath.mean(hrvBase)
-        let sdHRV   = StressMath.std(hrvBase, mean: meanHRV)
-
-        let rhrT = today.restingHr.map(Double.init)
-        let hrvT = today.avgHrv
-
-        // Resolve today's score: prefer a stored value, else derive.
-        let derivedAvailable = (rhrT != nil && meanRHR != nil) || (hrvT != nil && meanHRV != nil)
         let storedToday = storedByDay[today.day]
-        guard storedToday != nil || derivedAvailable else { return nil }
+        guard storedToday != nil || derived != nil else { return nil }
 
-        let derivedToday: Double? = derivedAvailable
-            ? StressMath.squash(StressMath.rawScore(
-                rhrToday: rhrT, meanRHR: meanRHR, sdRHR: sdRHR,
-                hrvToday: hrvT, meanHRV: meanHRV, sdHRV: sdHRV))
-            : nil
-
-        let s = storedToday ?? derivedToday ?? 1.5
+        let s = storedToday ?? derived?.score ?? 1.5
         self.usingStored = storedToday != nil
         self.score = s
         self.band = StressBand(score: s)
         self.rhrToday = today.restingHr
-        self.hrvToday = hrvT
-        self.rhrDelta = (rhrT != nil && meanRHR != nil) ? (rhrT! - meanRHR!) : nil
-        self.hrvDelta = (hrvT != nil && meanHRV != nil) ? (hrvT! - meanHRV!) : nil
+        self.hrvToday = today.avgHrv
+        self.rhrDelta = derived?.rhrDelta
+        self.hrvDelta = derived?.hrvDelta
 
         self.explanation = StressMath.explanation(
             band: self.band,
@@ -910,23 +900,16 @@ struct StressModel {
             usingStored: self.usingStored
         )
 
-        // Full daily proxy history: stored value if present for the day, else the
-        // z-score derivation against the SAME baseline so the line is comparable.
+        // Full daily history: the stored value when the day has one, else that day scored against ITS OWN
+        // preceding 30 days, the same way today is.
         var pts: [TrendPoint] = []
-        for d in days {
+        for (i, d) in days.enumerated() {
             guard let date = DayKey.date(d.day) else { continue }
             if let v = storedByDay[d.day] {
                 pts.append(TrendPoint(date: date, value: v))
-                continue
+            } else if let r = DailyStressScore.score(nights, at: i) {
+                pts.append(TrendPoint(date: date, value: r.score))
             }
-            let dRHR = d.restingHr.map(Double.init)
-            let dHRV = d.avgHrv
-            guard (dRHR != nil && meanRHR != nil) || (dHRV != nil && meanHRV != nil) else { continue }
-            let r = StressMath.rawScore(
-                rhrToday: dRHR, meanRHR: meanRHR, sdRHR: sdRHR,
-                hrvToday: dHRV, meanHRV: meanHRV, sdHRV: sdHRV
-            )
-            pts.append(TrendPoint(date: date, value: StressMath.squash(r)))
         }
         self.fullTrend = pts
 
@@ -947,39 +930,6 @@ struct StressModel {
 // MARK: - Stress math (pure, testable helpers)
 
 enum StressMath {
-    static func mean(_ xs: [Double]) -> Double? {
-        guard !xs.isEmpty else { return nil }
-        return xs.reduce(0, +) / Double(xs.count)
-    }
-
-    /// Population standard deviation; 0 when there's no spread.
-    static func std(_ xs: [Double], mean m: Double?) -> Double {
-        guard let m, xs.count > 1 else { return 0 }
-        let v = xs.map { ($0 - m) * ($0 - m) }.reduce(0, +) / Double(xs.count)
-        return v.squareRoot()
-    }
-
-    /// Combined autonomic z-score. RHR-up and HRV-down both push it positive.
-    static func rawScore(
-        rhrToday: Double?, meanRHR: Double?, sdRHR: Double,
-        hrvToday: Double?, meanHRV: Double?, sdHRV: Double
-    ) -> Double {
-        var sum = 0.0
-        if let r = rhrToday, let m = meanRHR, sdRHR > 0.0001 {
-            sum += (r - m) / sdRHR            // up = stress
-        }
-        if let h = hrvToday, let m = meanHRV, sdHRV > 0.0001 {
-            sum += (m - h) / sdHRV            // down = stress
-        }
-        return sum
-    }
-
-    /// Logistic squash of the raw z-sum onto 0–3 (baseline 0 → 1.5).
-    static func squash(_ raw: Double) -> Double {
-        let s = 3.0 / (1.0 + exp(-raw))
-        return min(max(s, 0), 3)
-    }
-
     static func explanation(band: StressBand, rhrDelta: Double?, hrvDelta: Double?, usingStored: Bool) -> String {
         let rhrUp = (rhrDelta ?? 0) > 1.0
         let rhrDn = (rhrDelta ?? 0) < -1.0

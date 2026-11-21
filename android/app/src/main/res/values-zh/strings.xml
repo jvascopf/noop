@@ -2872,4 +2872,10 @@
     <plurals name="weekly_digest_previous_week_sparse">
         <item quantity="other">上周只有 %1$d 天数据，因此环比变化只是粗略参考，不构成趋势。</item>
     </plurals>
+    <string name="stress_lenses_last_night">昨晚 · 5 分钟窗口</string>
+    <string name="stress_lfhf_ratio">LF/HF 比值</string>
+    <string name="stress_lfhf_caption">睡眠期间 HRV 低频与高频功率之比。受呼吸和血压反射影响，因此并非单纯的压力指标。</string>
+    <string name="stress_lenses_footnote">来自昨晚睡眠的额外 HRV 读数，取其 5 分钟窗口的中位数（两种方法所假设的记录时长）。仅供参考，不会改变上方的压力评分。</string>
+    <string name="stress_baevsky_caption">睡眠期间心律的僵硬程度。静息时约 50–150 属典型；远高于此表示心律僵硬、处于压力状态。</string>
+    <string name="stress_methodology_v2">我们将昨晚的静息心率和你 7 天的 HRV 趋势与之前 30 天进行比较。在你正常的夜间波动范围内的小变化视为正常的一天；超出范围时，静息心率升高和 HRV 降低会推高评分。两项偏差取平均后映射到 0-3 分：0 为平静，1.5 为你的基线，3 为高度激活。它既反映心理压力，也反映身体负荷（训练、疾病、饮酒、睡眠不足）。</string>
 </resources>

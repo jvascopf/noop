@@ -2918,4 +2918,10 @@
         <item quantity="one">Letzte Woche gab es nur %1$d Tag mit Daten, daher sind die Änderungen zur Vorwoche grob und kein Trend.</item>
         <item quantity="other">Letzte Woche gab es nur %1$d Tage mit Daten, daher sind die Änderungen zur Vorwoche grob und kein Trend.</item>
     </plurals>
+    <string name="stress_lenses_last_night">letzte Nacht · 5-Min.-Fenster</string>
+    <string name="stress_lfhf_ratio">LF/HF-Verhältnis</string>
+    <string name="stress_lfhf_caption">Nieder- vs. hochfrequente HRV-Leistung im Schlaf. Wird von Atmung und Blutdruckreflexen geprägt und ist daher kein reines Stressmaß.</string>
+    <string name="stress_lenses_footnote">Zusätzliche HRV-Werte aus dem Schlaf der letzten Nacht, der Median ihrer 5-Minuten-Fenster (die Aufzeichnungslänge, von der beide Methoden ausgehen). Nur zur Information; sie ändern den Stresswert oben nicht.</string>
+    <string name="stress_baevsky_caption">Starrheit deines Herzrhythmus im Schlaf. In Ruhe sind etwa 50–150 typisch; deutlich höher bedeutet einen starren, gestressten Rhythmus.</string>
+    <string name="stress_methodology_v2">Wir vergleichen die Ruheherzfrequenz der letzten Nacht und deinen 7-Tage-HRV-Trend mit den 30 Tagen davor. Kleine Änderungen innerhalb deiner normalen Schwankung von Nacht zu Nacht gelten als normaler Tag; darüber hinaus erhöhen eine höhere Ruheherzfrequenz und eine niedrigere HRV den Wert. Beide Abweichungen werden gemittelt und auf eine Skala von 0-3 abgebildet: 0 ist ruhig, 1,5 entspricht deiner Basis, 3 ist stark aktiviert. Der Wert spiegelt körperliche Belastung (Training, Krankheit, Alkohol, kurzer Schlaf) ebenso wider wie mentalen Stress.</string>
 </resources>

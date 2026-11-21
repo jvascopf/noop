@@ -59,7 +59,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.noop.analytics.DaytimeStress
+import com.noop.analytics.DailyStressScore
 import com.noop.analytics.HrvFreqDomain
+import com.noop.analytics.NocturnalHRVLenses
 import com.noop.analytics.StressIndex
 import com.noop.data.DailyMetric
 import com.noop.data.RrInterval
@@ -173,10 +175,23 @@ fun StressScreen(vm: AppViewModel, onBreathe: () -> Unit = {}) {
                     // of a slow one.
                     daytime = core.daytime
                     daytimeUsesPersonalBaseline = core.usesPersonalBaseline
-                    val beats = core.rr
-                    val lenses = if (beats.isEmpty()) null else StressLoadCancellation.read {
+                    // Personal fork: both lenses assume short, stationary recordings, so they are read from
+                    // the most recent sleep session in 5-minute windows (`NocturnalHRVLenses`), not from every
+                    // beat since midnight. Twin of the iOS StressView read.
+                    val lenses = StressLoadCancellation.read {
                         withContext(Dispatchers.Default) {
-                            StressIndex.components(beats) to HrvFreqDomain.freqDomain(beats)
+                            val now = System.currentTimeMillis() / 1000L
+                            val night = vm.repo.sleepSessionsUnion(vm.activeStrapId, now - 36 * 3600L, now)
+                                .filter { it.endTs > it.startTs }
+                                .maxByOrNull { it.endTs }
+                            if (night == null) {
+                                null to null
+                            } else {
+                                val beats = vm.repo.rrIntervalsUnion(
+                                    vm.activeStrapId, night.startTs, night.endTs, limit = 200_000,
+                                )
+                                NocturnalHRVLenses.compute(beats, night.startTs, night.endTs)
+                            }
                         }
                     }
                     stressIndex = lenses?.first
@@ -505,7 +520,7 @@ private fun StressAdvancedCard(
             ) {
                 Overline("Advanced HRV", modifier = Modifier.weight(1f))
                 Text(
-                    uiString(R.string.l10n_stress_screen_on_demand_today_s_r_r_17d716e1),
+                    uiString(R.string.stress_lenses_last_night),
                     style = NoopType.footnote,
                     color = Palette.textTertiary,
                 )
@@ -520,7 +535,7 @@ private fun StressAdvancedCard(
                         modifier = m,
                         label = uiString(R.string.l10n_stress_screen_baevsky_stress_index_296cf7c0),
                         value = "${stressIndex.si.roundToInt()}",
-                        caption = "Autonomic rigidity from your heart-rate rhythm. Higher means a more rigid, stressed rhythm.",
+                        caption = uiString(R.string.stress_baevsky_caption),
                         accent = StressRamp.TENSE,
                     )
                 }
@@ -533,9 +548,9 @@ private fun StressAdvancedCard(
                     tiles.add { m ->
                         StatTile(
                             modifier = m,
-                            label = uiString(R.string.l10n_stress_screen_autonomic_balance_lf_hf_776cb6f7),
+                            label = uiString(R.string.stress_lfhf_ratio),
                             value = StressTrace.formatRatio(ratio),
-                            caption = "Sympathetic vs parasympathetic tone from frequency-domain HRV. Higher leans sympathetic (stress-ward).",
+                            caption = uiString(R.string.stress_lfhf_caption),
                             accent = StressRamp.STEADY,
                         )
                     }
@@ -562,7 +577,7 @@ private fun StressAdvancedCard(
             }
 
             Text(
-                uiString(R.string.l10n_stress_screen_these_are_extra_on_demand_hrv_9303f1de),
+                uiString(R.string.stress_lenses_footnote),
                 style = NoopType.footnote,
                 color = Palette.textTertiary,
             )
@@ -1523,7 +1538,7 @@ private fun StressMethodologyCard(model: StressModel, modifier: Modifier = Modif
                 color = Palette.textPrimary,
             )
             Text(
-                uiString(R.string.l10n_stress_screen_we_compare_today_s_resting_heart_a9cd0955),
+                uiString(R.string.stress_methodology_v2),
                 style = NoopType.subhead,
                 color = Palette.textSecondary,
             )
@@ -1722,51 +1737,32 @@ internal class StressModel private constructor(
             if (idx < 0) return null   // no days at all
             val today = days[idx]
 
-            // Baseline window: up to 30 days ending the day BEFORE the scored day, so it's measured
-            // against its own recent past rather than itself.
-            val baseline = if (idx > 0) days.subList(0, idx).takeLast(30) else emptyList()
+            // Derived score (personal fork): `DailyStressScore` reads the 7-day ln(rMSSD) and the night's resting
+            // HR against the 30 days before, with a neutral band and the two deviations averaged.
+            val nights = days.map { DailyStressScore.Night(it.restingHr, it.avgHrv) }
+            val derived = DailyStressScore.score(nights, idx)
 
-            val rhrBase = baseline.mapNotNull { it.restingHr?.toDouble() }
-            val hrvBase = baseline.mapNotNull { it.avgHrv }
-
-            val meanRHR = mean(rhrBase)
-            val sdRHR = std(rhrBase, meanRHR)
-            val meanHRV = mean(hrvBase)
-            val sdHRV = std(hrvBase, meanHRV)
-
-            val rhrT = today.restingHr?.toDouble()
-            val hrvT = today.avgHrv
-
-            val derivedAvailable = (rhrT != null && meanRHR != null) || (hrvT != null && meanHRV != null)
             val storedToday = stored[today.day]
-            if (storedToday == null && !derivedAvailable) return null
+            if (storedToday == null && derived == null) return null
 
-            val derivedToday: Double? = if (derivedAvailable) {
-                squash(rawScore(rhrT, meanRHR, sdRHR, hrvT, meanHRV, sdHRV))
-            } else {
-                null
-            }
-
-            val s = storedToday ?: derivedToday ?: 1.5
+            val s = storedToday ?: derived?.score ?: 1.5
             val usingStored = storedToday != null
             val band = StressBand.forScore(s)
-            val rhrDelta = if (rhrT != null && meanRHR != null) rhrT - meanRHR else null
-            val hrvDelta = if (hrvT != null && meanHRV != null) hrvT - meanHRV else null
+            val rhrDelta = derived?.rhrDelta
+            val hrvDelta = derived?.hrvDelta
+            val hrvT = today.avgHrv
             val explanation = explanation(band, rhrDelta, hrvDelta)
 
-            // Full daily proxy history: stored value if present for the day, else the
-            // z-score derivation against the SAME baseline so the line is comparable.
+            // Full daily history: the stored value when the day has one, else that day scored against ITS
+            // OWN preceding 30 days, the same way today is.
             val pts = ArrayList<TrendPoint>()
-            for (d in days) {
+            for ((i, d) in days.withIndex()) {
                 val v = stored[d.day]
                 if (v != null) {
                     pts.add(TrendPoint(d.day, v.coerceIn(0.0, 3.0)))
                     continue
                 }
-                val dRHR = d.restingHr?.toDouble()
-                val dHRV = d.avgHrv
-                if ((dRHR == null || meanRHR == null) && (dHRV == null || meanHRV == null)) continue
-                pts.add(TrendPoint(d.day, squash(rawScore(dRHR, meanRHR, sdRHR, dHRV, meanHRV, sdHRV))))
+                DailyStressScore.score(nights, i)?.let { pts.add(TrendPoint(d.day, it.score)) }
             }
 
             // "Calm time": share of the last 30 charted days that sat in the LOW band.
@@ -1797,37 +1793,6 @@ internal class StressModel private constructor(
                 usingStored = usingStored,
             )
         }
-
-        // MARK: Stress math (pure helpers, ported from StressMath)
-
-        private fun mean(xs: List<Double>): Double? =
-            if (xs.isEmpty()) null else xs.sum() / xs.size
-
-        /** Population standard deviation; 0 when there's no spread. */
-        private fun std(xs: List<Double>, m: Double?): Double {
-            if (m == null || xs.size <= 1) return 0.0
-            val v = xs.sumOf { (it - m) * (it - m) } / xs.size
-            return sqrt(v)
-        }
-
-        /** Combined autonomic z-score. RHR-up and HRV-down both push it positive. */
-        private fun rawScore(
-            rhrToday: Double?, meanRHR: Double?, sdRHR: Double,
-            hrvToday: Double?, meanHRV: Double?, sdHRV: Double,
-        ): Double {
-            var sum = 0.0
-            if (rhrToday != null && meanRHR != null && sdRHR > 0.0001) {
-                sum += (rhrToday - meanRHR) / sdRHR        // up = stress
-            }
-            if (hrvToday != null && meanHRV != null && sdHRV > 0.0001) {
-                sum += (meanHRV - hrvToday) / sdHRV        // down = stress
-            }
-            return sum
-        }
-
-        /** Logistic squash of the raw z-sum onto 0–3 (baseline 0 → 1.5). */
-        private fun squash(raw: Double): Double =
-            (3.0 / (1.0 + exp(-raw))).coerceIn(0.0, 3.0)
 
         private fun explanation(band: StressBand, rhrDelta: Double?, hrvDelta: Double?): String {
             val rhrUp = (rhrDelta ?: 0.0) > 1.0

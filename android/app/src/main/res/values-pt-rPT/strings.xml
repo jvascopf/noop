@@ -2897,4 +2897,10 @@
         <item quantity="one">A semana passada só teve %1$d dia de dados, por isso as variações face à semana anterior são aproximadas, não uma tendência.</item>
         <item quantity="other">A semana passada só teve %1$d dias de dados, por isso as variações face à semana anterior são aproximadas, não uma tendência.</item>
     </plurals>
+    <string name="stress_lenses_last_night">última noite · janelas de 5 min</string>
+    <string name="stress_lfhf_ratio">Rácio LF/HF</string>
+    <string name="stress_lfhf_caption">Potência da HRV de baixa face a alta frequência durante o sono. Depende da respiração e dos reflexos da pressão arterial, por isso não é uma medida pura de stress.</string>
+    <string name="stress_lenses_footnote">Leituras extra de HRV do sono da última noite: a mediana das suas janelas de 5 minutos (a duração de registo que os dois métodos pressupõem). Apenas informativas; não alteram a pontuação de stress acima.</string>
+    <string name="stress_baevsky_caption">Rigidez do teu ritmo cardíaco durante o sono. Em repouso, cerca de 50–150 é típico; muito acima disso indica um ritmo rígido e sob stress.</string>
+    <string name="stress_methodology_v2">Comparamos a FC em repouso da última noite e a tua tendência de HRV de 7 dias com os 30 dias anteriores. Pequenas variações dentro da tua oscilação normal de noite para noite contam como um dia normal; acima disso, uma FC em repouso mais alta e uma HRV mais baixa fazem subir a pontuação. Os dois desvios são combinados em média numa escala de 0-3: 0 é calma, 1,5 é a tua base e 3 é muito ativado. Reflete tanto a carga física (treino, doença, álcool, pouco sono) como o stress mental.</string>
 </resources>
