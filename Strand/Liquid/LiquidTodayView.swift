@@ -2949,7 +2949,8 @@ private struct LiquidBatteryButton: View {
                 ChargeSyncIndicator(
                     batteryState: indicatorState,
                     syncing: syncing,
-                    chunks: syncChunks
+                    chunks: syncChunks,
+                    progressPercent: syncProgressPercent
                 )
             }
             .nativeLiquidGlassSyncButton()
@@ -2992,6 +2993,14 @@ private struct LiquidBatteryButton: View {
 
     /// Chunks acked this session, shown inside the spinner where the battery percentage sits. The
     /// expanded label stays "Syncing" — this is the numeric read-out, not the caption.
+    /// The sync's share done, shown in the ring instead of the bare chunk tally once it can be estimated.
+    private var syncProgressPercent: Int? {
+        #if DEBUG
+        if DemoSyncHarness.active { return nil }
+        #endif
+        return live.syncProgress()?.percent
+    }
+
     private var syncChunks: Int {
         #if DEBUG
         if DemoSyncHarness.active { return demoChunks }
@@ -3010,6 +3019,9 @@ private struct LiquidBatteryButton: View {
             // Release the two are identical, but under `--demo-sync` reading LiveState here would have
             // VoiceOver announcing a real count while the ring showed the synthetic one — i.e. the
             // harness could not be used to check the read-out it exists to exercise.
+            if let progress = live.syncProgress() {
+                return String(localized: "Syncing strap history, \(progress.summaryLine())")
+            }
             let n = syncChunks
             guard n > 0 else { return String(localized: "Syncing strap history") }
             // #689/#815: the connect-time ring backlog, when the strap reported one. Zero is dropped by
@@ -3136,7 +3148,8 @@ private struct LiquidSyncStatusRow: View {
     }
 
     private var chunks: String {
-        SyncActivityCopy.syncing(chunks: live.syncChunksThisSession, pagesBehind: nil).status
+        if let progress = live.syncProgress() { return String(localized: "Syncing… \(progress.summaryLine())") }
+        return SyncActivityCopy.syncing(chunks: live.syncChunksThisSession, pagesBehind: nil).status
     }
 
     private func row(_ label: String, value: String, tone: Color) -> some View {
