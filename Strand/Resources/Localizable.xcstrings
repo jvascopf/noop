@@ -7383,7 +7383,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ · algumas séries esparsas alargadas"
+            "value": "%@ · algumas séries escassas alargadas"
           }
         },
         "ru": {
@@ -12293,7 +12293,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld dias · %2$@ · algumas séries esparsas alargadas"
+            "value": "%1$lld dias · %2$@ · algumas séries escassas alargadas"
           }
         },
         "ru": {
@@ -15273,7 +15273,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld leituras · esparsas, ampliadas para %2$@"
+            "value": "%1$lld leituras · escassas, ampliadas para %2$@"
           }
         },
         "ru": {
@@ -16063,7 +16063,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld sessões · esparsas, ampliadas para %2$@"
+            "value": "%1$lld sessões · escassas, ampliadas para %2$@"
           }
         },
         "ru": {
@@ -19376,7 +19376,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 dia · %@ · algumas séries esparsas ampliadas"
+            "value": "1 dia · %@ · algumas séries escassas ampliadas"
           }
         },
         "ru": {
@@ -30002,7 +30002,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adicionar cochilo"
+            "value": "Adicionar sesta"
           }
         },
         "ru": {
@@ -34054,7 +34054,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Armado na própria pega, para que possa vibrar na hora de acordar, mesmo que o telefone esteja em modo de espera ou o NOOP esteja fechado. Envia o comando de alarme exato que a aplicação oficial envia, zumbido confirmado num WHOOP 4.0 real (captura de fio da comunidade + teste no dispositivo, #535). Mantenha um alarme de reserva para qualquer coisa que não possa realmente perder."
+            "value": "Armado na própria bracelete, para que possa vibrar na hora de acordar, mesmo que o telefone esteja em modo de espera ou o NOOP esteja fechado. Envia o comando de alarme exato que a aplicação oficial envia, zumbido confirmado num WHOOP 4.0 real (captura de fio da comunidade + teste no dispositivo, #535). Mantenha um alarme de reserva para qualquer coisa que não possa realmente perder."
           }
         },
         "pl": {
@@ -34112,7 +34112,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Armado na própria pega, para que possa vibrar na hora de acordar, mesmo que o telefone esteja em modo de espera ou o NOOP esteja fechado. Enviámos o mesmo comando de alarme que a aplicação oficial envia, mas um despertar acionado por bracelete ainda não foi confirmado da nossa parte, por isso, mantenha um alarme de reserva por enquanto."
+            "value": "Armado na própria bracelete, para que possa vibrar na hora de acordar, mesmo que o telefone esteja em modo de espera ou o NOOP esteja fechado. Enviámos o mesmo comando de alarme que a aplicação oficial envia, mas um despertar acionado por bracelete ainda não foi confirmado da nossa parte, por isso, mantenha um alarme de reserva por enquanto."
           }
         },
         "ru": {
@@ -34170,7 +34170,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Arma a pega para vibrar na hora de acordar, mesmo que o NOOP esteja fechado. Envia o comando de alarme exato que a aplicação oficial envia, zumbido confirmado num WHOOP 4.0 real (captura de fio da comunidade + teste no dispositivo, #535). Mantenha um alarme de reserva para qualquer coisa que não possa realmente perder."
+            "value": "Arma a bracelete para vibrar na hora de acordar, mesmo que o NOOP esteja fechado. Envia o comando de alarme exato que a aplicação oficial envia, zumbido confirmado num WHOOP 4.0 real (captura de fio da comunidade + teste no dispositivo, #535). Mantenha um alarme de reserva para qualquer coisa que não possa realmente perder."
           }
         },
         "pl": {
@@ -34228,7 +34228,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Arma a pega para vibrar na hora de acordar, mesmo que o NOOP esteja fechado. Ainda experimental no WHOOP 4.0, por isso mantenha um alarme de reserva até confirmar que o acorda."
+            "value": "Arma a bracelete para vibrar na hora de acordar, mesmo que o NOOP esteja fechado. Ainda experimental no WHOOP 4.0, por isso mantenha um alarme de reserva até confirmar que o acorda."
           }
         },
         "ru": {
@@ -35380,7 +35380,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Detecção automática de treinos"
+            "value": "Deteção automática de treinos"
           }
         },
         "ru": {
@@ -37139,6 +37139,64 @@
         }
       }
     },
+    "Band Sleep State": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlafstatus des Bands"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado de sueño de la pulsera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "État de sommeil du bracelet"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stato del sonno della fascia"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stan snu opaski"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado de sono da bracelete"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Состояние сна по браслету"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手环端睡眠状态"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手環端睡眠狀態"
+          }
+        }
+      }
+    },
     "Back": {
       "localizations": {
         "de": {
@@ -37760,7 +37818,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cópia de segurança exportado"
+            "value": "Cópia de segurança exportada"
           }
         },
         "ru": {
@@ -37818,7 +37876,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Falha no cópia de segurança - selecione novamente a pasta e tente novamente."
+            "value": "Falha na cópia de segurança - selecione novamente a pasta e tente novamente."
           }
         },
         "ru": {
@@ -37876,7 +37934,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Falha no cópia de segurança: %@"
+            "value": "Falha na cópia de segurança: %@"
           }
         },
         "ru": {
@@ -37992,7 +38050,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cópia de segurança importado"
+            "value": "Cópia de segurança importada"
           }
         },
         "ru": {
@@ -42868,7 +42926,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pega de transmissão HR (Garmin/ANT)"
+            "value": "Bracelete de transmissão HR (Garmin/ANT)"
           }
         },
         "pl": {
@@ -43320,7 +43378,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "A construir a partir da tua pega"
+            "value": "A construir a partir da tua bracelete"
           }
         },
         "ru": {
@@ -50354,7 +50412,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escolha um cópia de segurança"
+            "value": "Escolha uma cópia de segurança"
           }
         },
         "ru": {
@@ -54141,7 +54199,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ligue a pega para tinais de zumbido"
+            "value": "Ligue a bracelete para sinais de vibração"
           }
         },
         "ru": {
@@ -54670,7 +54728,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ligue a tua pega para o taco de feltro. A varredura acompanha-o com um zumbido na inspiração e dois na expiração."
+            "value": "Ligue a tua bracelete para o sinal tátil. A varredura acompanha-o com um zumbido na inspiração e dois na expiração."
           }
         },
         "ru": {
@@ -57724,7 +57782,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível restaurar este cópia de segurança."
+            "value": "Não foi possível restaurar esta cópia de segurança."
           }
         },
         "ru": {
@@ -57782,7 +57840,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível fazer o cópia de segurança em segurança agora. As alterações recentes ainda estão no registo de gravação antecipada."
+            "value": "Não foi possível fazer a cópia de segurança em segurança agora. As alterações recentes ainda estão no registo de gravação antecipada."
           }
         },
         "ru": {
@@ -60080,7 +60138,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cópia de segurança automático diário"
+            "value": "Cópia de segurança automática diária"
           }
         },
         "ru": {
@@ -65218,7 +65276,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toque duas vezes na pega para desencadear uma ação em %@. (A bracelete expõe um único gesto de duplo toque.)"
+            "value": "Toque duas vezes na bracelete para desencadear uma ação em %@. (A bracelete expõe um único gesto de duplo toque.)"
           }
         },
         "ru": {
@@ -88720,7 +88778,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "A importação substitui tudo o que está atualmente em %@. Os teus dados antigos são mantidos num ficheiro secundário, apenas para garantir. O NOOP precisa de ser reiniciado para que uma importação entre em vigor. O Export CSV grava um zip em formato WHOOP dos teus dias, sono, treinos e diário que reimporta para NOOP no Mac, iPhone ou Android. As linhas computadas no dispositivo são marcadas como APPROXIMATE na coluna Origem; o cópia de segurança completo permanece no caminho de restauro sem perdas."
+            "value": "A importação substitui tudo o que está atualmente em %@. Os teus dados antigos são mantidos num ficheiro secundário, apenas para garantir. O NOOP precisa de ser reiniciado para que uma importação entre em vigor. O Export CSV grava um zip em formato WHOOP dos teus dias, sono, treinos e diário que reimporta para NOOP no Mac, iPhone ou Android. As linhas computadas no dispositivo são marcadas como APPROXIMATE na coluna Origem; a cópia de segurança completa permanece no caminho de restauro sem perdas."
           }
         },
         "ru": {
@@ -93075,7 +93133,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Último cópia de segurança: %@"
+            "value": "Última cópia de segurança: %@"
           }
         },
         "ru": {
@@ -93371,7 +93429,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ontem à noite, %@. A noite de hoje chega depois de ter dormido com a pega."
+            "value": "Ontem à noite, %@. A noite de hoje chega depois de ter dormido com a bracelete."
           }
         },
         "ru": {
@@ -96447,7 +96505,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "O RH em direto funciona. Liberte a pega para desbloquear o buzz, os alarmes e a sincronização"
+            "value": "O RH em direto funciona. Liberte a bracelete para desbloquear o buzz, os alarmes e a sincronização"
           }
         },
         "ru": {
@@ -97812,7 +97870,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bloquear o Mac quando eu tirar a pega"
+            "value": "Bloquear o Mac quando eu tirar a bracelete"
           }
         },
         "ru": {
@@ -98920,7 +98978,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registado como um cochilo. Errado? Toque em Editar para ajustar os teus horários de deitar e acordar."
+            "value": "Registado como uma sesta. Errado? Toque em Editar para ajustar os teus horários de deitar e acordar."
           }
         },
         "ru": {
@@ -103797,7 +103855,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mín–máx normalizado · série esparsa alargada para além de %1$@ · %2$@"
+            "value": "Mín–máx normalizado · série escassa alargada para além de %1$@ · %2$@"
           }
         },
         "ru": {
@@ -105143,7 +105201,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mova todos os teus dados NOOP para outra máquina. A exportação guarda tudo (histórico, sono, treinos, definições) num único ficheiro que pode copiar; import substitui os dados de %@ por um cópia de segurança."
+            "value": "Mova todos os teus dados NOOP para outra máquina. A exportação guarda tudo (histórico, sono, treinos, definições) num único ficheiro que pode copiar; import substitui os dados de %@ por uma cópia de segurança."
           }
         },
         "ru": {
@@ -105208,7 +105266,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mova todos os teus dados NOOP para outra máquina. A exportação guarda tudo, histórico, sono, treinos, definições, num único ficheiro que pode copiar; a importação substitui os dados deste Mac por um cópia de segurança."
+            "value": "Mova todos os teus dados NOOP para outra máquina. A exportação guarda tudo, histórico, sono, treinos, definições, num único ficheiro que pode copiar; a importação substitui os dados deste Mac por uma cópia de segurança."
           }
         },
         "ru": {
@@ -108913,7 +108971,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cochilo(s)"
+            "value": "Sesta(s)"
           }
         },
         "ru": {
@@ -108971,7 +109029,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cochilos"
+            "value": "Sestas"
           }
         },
         "ru": {
@@ -109383,7 +109441,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Precisa da pega. Não há dados para hoje. A tua bracelete foi usada e ligada durante a noite?"
+            "value": "Precisa da bracelete. Não há dados para hoje. A tua bracelete foi usada e ligada durante a noite?"
           }
         },
         "ru": {
@@ -110903,7 +110961,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenhum cópia de segurança ainda."
+            "value": "Nenhuma cópia de segurança ainda."
           }
         },
         "ru": {
@@ -110961,7 +111019,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenhum cópia de segurança encontrado"
+            "value": "Nenhuma cópia de segurança encontrada"
           }
         },
         "ru": {
@@ -112719,7 +112777,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenhum cochilo registado neste dia."
+            "value": "Nenhuma sesta registada neste dia."
           }
         },
         "ru": {
@@ -112957,7 +113015,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ainda não há noites com dados de sono. O teu livro-razão é preenchido à medida que usa a pega para dormir."
+            "value": "Ainda não há noites com dados de sono. O teu registo é preenchido à medida que usa a bracelete para dormir."
           }
         },
         "ru": {
@@ -114001,7 +114059,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenhuma pega conectada. Coloque o teu WHOOP por perto e toque em Digitalizar novamente para emparelhar."
+            "value": "Nenhuma bracelete conectada. Coloque o teu WHOOP por perto e toque em Digitalizar novamente para emparelhar."
           }
         },
         "ru": {
@@ -115420,7 +115478,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não há dados suficientes de batida limpa para travar o ritmo hoje. Tente novamente descansado, sentado imóvel com a pega bem ajustada. Para já, vamos definir um ritmo de 5,5 br/min (coerência)."
+            "value": "Não há dados suficientes de batida limpa para travar o ritmo hoje. Tente novamente descansado, sentado imóvel com a bracelete bem ajustada. Para já, vamos definir um ritmo de 5,5 br/min (coerência)."
           }
         },
         "ru": {
@@ -118985,7 +119043,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Os cópia de seguranças mais antigos para além deste número são removidos, os mais antigos em primeiro lugar (≈ este número de dias). Se os dados estiverem corrompidos, restaure os mais recentes."
+            "value": "As cópias de segurança mais antigas para além deste número são removidas, as mais antigas em primeiro lugar (≈ este número de dias). Se os dados estiverem corrompidos, restaure os mais recentes."
           }
         },
         "pl": {
@@ -120518,7 +120576,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abra o Cópia de segurança e sincronização numa pasta"
+            "value": "Abra a Cópia de segurança e sincronização numa pasta"
           }
         },
         "ru": {
@@ -125811,7 +125869,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escolha quando o cochilo começou e terminou. O NOOP organiza-o a partir dos teus dados como uma sessão própria, separada da noite de sono."
+            "value": "Escolha quando a sesta começou e terminou. O NOOP organiza-a a partir dos teus dados como uma sessão própria, separada da noite de sono."
           }
         },
         "ru": {
@@ -128543,7 +128601,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Coloque a pega primeiro. O fluxo profundo ocorre apenas no pulso."
+            "value": "Coloque a bracelete primeiro. O fluxo profundo ocorre apenas no pulso."
           }
         },
         "ru": {
@@ -134844,7 +134902,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "A recuperação, pontuação de carga do NOOP, é liderada pela variabilidade da frequência cardíaca medida em relação à sua linha de base pessoal. Uma bracelete torácica transmite dados de batimento a batimento de forma densa durante toda a noite, para que possa aprender esta linha de base rapidamente. Em vez disso, um Apple Watch faz uma amostragem da VFC, uma mão cheia de leituras durante o dia e durante a noite, pelo que o sinal é real, mas mais esparso."
+            "value": "A recuperação, pontuação de carga do NOOP, é liderada pela variabilidade da frequência cardíaca medida em relação à sua linha de base pessoal. Uma bracelete torácica transmite dados de batimento a batimento de forma densa durante toda a noite, para que possa aprender esta linha de base rapidamente. Em vez disso, um Apple Watch faz uma amostragem da VFC, uma mão cheia de leituras durante o dia e durante a noite, pelo que o sinal é real, mas mais escasso."
           }
         },
         "ru": {
@@ -135674,7 +135732,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoante"
+            "value": "Restante"
           }
         },
         "ru": {
@@ -136944,7 +137002,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Substitua todos os dados atuais pelo cópia de segurança %@? Isto não pode ser desfeito."
+            "value": "Substitua todos os dados atuais pela cópia de segurança %@? Isto não pode ser desfeito."
           }
         },
         "ru": {
@@ -137002,7 +137060,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Substituir todos os dados atuais pelo cópia de segurança de %@? Isto não pode ser desfeito."
+            "value": "Substituir todos os dados atuais pela cópia de segurança de %@? Isto não pode ser desfeito."
           }
         },
         "ru": {
@@ -137118,7 +137176,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Substitua os dados deste dispositivo por um dos cópia de seguranças da tua pasta. Isto substitui os dados atuais, por isso faça uma cópia de segurança primeiro se não tiver a certeza."
+            "value": "Substitua os dados deste dispositivo por uma das cópias de segurança da tua pasta. Isto substitui os dados atuais, por isso faça uma cópia de segurança primeiro se não tiver a certeza."
           }
         },
         "ru": {
@@ -139790,7 +139848,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurador"
+            "value": "Restaurador"
           }
         },
         "ru": {
@@ -139848,7 +139906,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sono Descansoaurador"
+            "value": "Sono Restaurador"
           }
         },
         "ru": {
@@ -139906,7 +139964,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar"
+            "value": "Restaurar"
           }
         },
         "ru": {
@@ -139964,7 +140022,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar cópia de segurança %@"
+            "value": "Restaurar cópia de segurança %@"
           }
         },
         "ru": {
@@ -140022,7 +140080,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar cópia de segurança de %@"
+            "value": "Restaurar cópia de segurança de %@"
           }
         },
         "ru": {
@@ -140080,7 +140138,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar a partir de um cópia de segurança…"
+            "value": "Restaurar a partir de uma cópia de segurança…"
           }
         },
         "ru": {
@@ -140196,7 +140254,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar este cópia de segurança?"
+            "value": "Restaurar esta cópia de segurança?"
           }
         },
         "ru": {
@@ -140254,7 +140312,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurar para hoje"
+            "value": "Restaurar para hoje"
           }
         },
         "ru": {
@@ -140312,7 +140370,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descansoaurado"
+            "value": "Restaurado"
           }
         },
         "ru": {
@@ -141972,7 +142030,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Executa o fluxo contínuo de HRV apenas durante a janela de horário de silêncio (22h00 às 07h00 por defeito), reduzindo aproximadamente para metade o custo da bateria. As leituras de stress diurno serão mais esparsas. Nota: a captura contínua de VFC em segundo plano (incluindo sestas diurnas) é colocada em pausa fora desta janela. Para leituras diurnas de VFC a pedido (incluindo sestas), utilize o botão \"Fazer uma leitura de VFC\" no ecrã Em direto."
+            "value": "Executa o fluxo contínuo de HRV apenas durante a janela de horário de silêncio (22h00 às 07h00 por defeito), reduzindo aproximadamente para metade o custo da bateria. As leituras de stress diurno serão mais escassas. Nota: a captura contínua de VFC em segundo plano (incluindo sestas diurnas) é colocada em pausa fora desta janela. Para leituras diurnas de VFC a pedido (incluindo sestas), utilize o botão \"Fazer uma leitura de VFC\" no ecrã Em direto."
           }
         },
         "pl": {
@@ -142030,7 +142088,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Executa o stream apenas durante o horário de silêncio (das 22h às 7h por defeito), reduzindo aproximadamente para metade o custo da bateria. As leituras do Stress Diurno serão mais esparsas, uma vez que o Stress lê esta transmissão em direto."
+            "value": "Executa o stream apenas durante o horário de silêncio (das 22h às 7h por defeito), reduzindo aproximadamente para metade o custo da bateria. As leituras do Stress Diurno serão mais escassas, uma vez que o Stress lê esta transmissão em direto."
           }
         },
         "ru": {
@@ -143736,7 +143794,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guarde um cópia de segurança completo numa pasta à sua escolha - aponte-o para o Google Drive, iCloud ou Dropbox para tincronização fora do dispositivo."
+            "value": "Guarde uma cópia de segurança completa numa pasta à sua escolha - aponte-a para o Google Drive, iCloud ou Dropbox para sincronização fora do dispositivo."
           }
         },
         "ru": {
@@ -144206,7 +144264,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guardei um cópia de segurança na tua pasta."
+            "value": "Guardei uma cópia de segurança na tua pasta."
           }
         },
         "ru": {
@@ -151832,7 +151890,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Livro-razão da dívida do sono"
+            "value": "Registo da dívida de sono"
           }
         },
         "ru": {
@@ -153184,7 +153242,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esparso, ampliado para leituras %1$@ · %2$lld"
+            "value": "Escassas, ampliadas para %1$@ · %2$lld leituras"
           }
         },
         "ru": {
@@ -157666,7 +157724,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pega conectada"
+            "value": "Bracelete conectada"
           }
         },
         "ru": {
@@ -164190,7 +164248,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esse ficheiro não é um cópia de segurança NOOP. Não se parece com uma base de dados SQLite."
+            "value": "Esse ficheiro não é uma cópia de segurança NOOP. Não se parece com uma base de dados SQLite."
           }
         },
         "ru": {
@@ -165705,7 +165763,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "O despertador acima vibra no teu pulso a partir do firmware da própria bracelete. Não pode fazer soar um alarme alto. Também agendamos uma notificação de cópia de segurança no horário de ativação, mas uma aplicação transferida por sideload não pode soar uma ativação garantida neste dispositivo (que precisa de uma permissão de alerta crítico que esta compilação não tem), pelo que o modo Foco ou silencioso ainda pode silenciá-lo. Mantenha o alarme de relógio integrado do teu telemóvel como o teu verdadeiro cópia de segurança. O smart wake baseado no telefone do NOOP (deteção de sono leve) está disponível na aplicação Android."
+            "value": "O despertador acima vibra no teu pulso a partir do firmware da própria bracelete. Não pode fazer soar um alarme alto. Também agendamos uma notificação de cópia de segurança no horário de ativação, mas uma aplicação transferida por sideload não pode soar uma ativação garantida neste dispositivo (que precisa de uma permissão de alerta crítico que esta compilação não tem), pelo que o modo Foco ou silencioso ainda pode silenciá-lo. Mantenha o alarme de relógio integrado do teu telemóvel como a tua verdadeira cópia de segurança. O smart wake baseado no telefone do NOOP (deteção de sono leve) está disponível na aplicação Android."
           }
         },
         "ru": {
@@ -165821,7 +165879,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ainda não existem cópia de seguranças NOOP na tua pasta. Utilize Faça cópia de segurança agora primeiro."
+            "value": "Ainda não existem cópias de segurança NOOP na tua pasta. Utilize Faça cópia de segurança agora primeiro."
           }
         },
         "ru": {
@@ -167723,7 +167781,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este não é um cópia de segurança NOOP desta aplicação. Falta a contabilidade de migração que um cópia de segurança NOOP carrega (parece um cópia de segurança do Android ou a base de dados de outra aplicação) e restaurá-lo deixaria a tua loja paralisada. Para mover o teu histórico entre plataformas, exporte o CSV no formato WHOOP no outro dispositivo (Definições → Exportar dados) e importe-o para aqui ou importe a tua exportação original do WHOOP/Apple Health."
+            "value": "Esta não é uma cópia de segurança NOOP desta aplicação. Falta a contabilidade de migração que uma cópia de segurança NOOP carrega (parece uma cópia de segurança do Android ou a base de dados de outra aplicação) e restaurá-la deixaria a tua loja paralisada. Para mover o teu histórico entre plataformas, exporte o CSV no formato WHOOP no outro dispositivo (Definições → Exportar dados) e importe-o para aqui ou importe a tua exportação original do WHOOP/Apple Health."
           }
         },
         "ru": {
@@ -169585,7 +169643,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dica: escolha uma pasta no iCloud Drive e os teus cópia de seguranças serão sincronizados com todos os teus dispositivos Apple automaticamente, sem necessidade de configuração de conta."
+            "value": "Dica: escolha uma pasta no iCloud Drive e as tuas cópias de segurança serão sincronizadas com todos os teus dispositivos Apple automaticamente, sem necessidade de configuração de conta."
           }
         },
         "ru": {
@@ -170729,7 +170787,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "A noite de hoje chega depois de ter dormido com a pega."
+            "value": "A noite de hoje chega depois de ter dormido com a bracelete."
           }
         },
         "ru": {
@@ -183063,7 +183121,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Por que razão isto é registado como um cochilo"
+            "value": "Por que razão isto é registado como uma sesta"
           }
         },
         "ru": {
@@ -183475,7 +183533,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ligue as ações do NOOP num Back-Tap, numa automação de foco ou num atalho mais longo. Por exemplo, toque duas vezes na parte de trás do teu iPhone para movimentar a pega."
+            "value": "Ligue as ações do NOOP num Back-Tap, numa automação de foco ou num atalho mais longo. Por exemplo, toque duas vezes na parte de trás do teu iPhone para fazer vibrar a bracelete."
           }
         },
         "ru": {
@@ -190392,7 +190450,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "toda a histórico"
+            "value": "todo o histórico"
           }
         },
         "ru": {
@@ -190450,7 +190508,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "o tempo todo"
+            "value": "todo o período"
           }
         },
         "ru": {
@@ -195226,7 +195284,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "month"
+            "value": "mês"
           }
         },
         "ru": {
@@ -198065,7 +198123,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "quarter"
+            "value": "trimestre"
           }
         },
         "ru": {
@@ -201587,7 +201645,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "versus anterior %@"
+            "value": "vs. %@ anterior"
           }
         },
         "ru": {
@@ -201877,7 +201935,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "week"
+            "value": "semana"
           }
         },
         "ru": {
@@ -201993,7 +202051,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "year"
+            "value": "ano"
           }
         },
         "ru": {
