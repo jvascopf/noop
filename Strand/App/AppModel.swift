@@ -502,6 +502,12 @@ final class AppModel: ObservableObject {
             // BEFORE the Effort rescore + analyzeRecent loop so both operate on a cleaned DB. Persisted
             // flag → no-op on every subsequent launch; idempotent on a clean DB.
             await self.intelligence.runTimestampHealIfNeeded()
+            // One-shot repair: WHOOP rows imported before `skinTempC` was filled carry the export's absolute °C in
+            // the deviation column. Move it and recompute the deviation; no-op once done.
+            if let store = await self.repo.storeHandle(),
+               await WhoopImporter.repairAbsoluteSkinTempIfNeeded(store: store, deviceId: self.deviceId) {
+                await self.repo.refresh()
+            }
             // One-shot on-upgrade Effort rescore (#313): recompute strain from source across the FULL
             // history and repair sleep rejected by unmatched WRIST_OFF in one pass. Both persisted flags
             // describe that shared pass; either pending flag triggers it.
