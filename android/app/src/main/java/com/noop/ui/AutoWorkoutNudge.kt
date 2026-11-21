@@ -274,6 +274,9 @@ private suspend fun autoDetectCandidate(
     // Resting HR: most recent nightly RHR in history, else the detector's own default (60). Byte-faithful
     // to iOS `days.last(where: { restingHr != nil })?.restingHr`.
     val restingHr = days.lastOrNull { it.restingHr != null }?.restingHr
+    // Max HR (profile override, else the age estimate) lifts the gate to resting + 40% of the reserve.
+    // Mirrors iOS, which reads the same profile value through `Repository.strainProfile`.
+    val hrMax = ProfileStore.from(context).hrMax
 
     // Exclude EVERY already-saved workout window. The repository unions include the active, canonical and
     // archived WHOOP ids plus all computed siblings; the explicit sources mirror Swift `workoutRows()` and
@@ -302,6 +305,7 @@ private suspend fun autoDetectCandidate(
             gravity = emptyList(),
             savedWorkouts = saved,
             path = "autoDetect",
+            hrMax = hrMax,
         )
         for (line in trace) viewModel.ble.externalLog(line, com.noop.testcentre.TestDomain.WORKOUTS)
 
@@ -336,6 +340,7 @@ private suspend fun autoDetectCandidate(
             restingHR = restingHr,
             gravity = emptyList(), // HR-only MVP (matches iOS passing motion: nil)
             savedWorkouts = saved,
+            hrMax = hrMax,
         )
     }
     // Honor BOTH historic dismissal stores. The suggestion MVP wrote exact tokens to SharedPreferences;
@@ -347,6 +352,7 @@ private suspend fun autoDetectCandidate(
         .map { it.startTs to it.endTs }
         .distinct()
     return candidates
+        .filter(AutoWorkoutDetector::isLongEnoughToSuggest)
         .filterNot { AutoWorkoutPrefs.isDismissed(it, legacyDismissed, detectedDismissed) }
         .maxByOrNull { it.startSec }
 }

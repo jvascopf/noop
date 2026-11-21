@@ -40,14 +40,15 @@ object AutoWorkoutDetectorTrace {
         savedWorkouts: List<Pair<Long, Long>> = emptyList(),
         path: String = "autoDetect",
         minimumSustainedMinutes: Double = AutoWorkoutDetector.minSustainedMin,
+        hrMax: Int? = null,
     ): Pair<List<AutoWorkoutDetector.DetectedWorkout>, List<String>> {
         // The result the Today card reads, verbatim, so the trace cannot diverge from it.
         val results = AutoWorkoutDetector.detect(
-            hr, restingHR, gravity, savedWorkouts, minimumSustainedMinutes,
+            hr, restingHR, gravity, savedWorkouts, minimumSustainedMinutes, hrMax,
         )
 
         val lines = ArrayList<String>()
-        val floor = (restingHR ?: AutoWorkoutDetector.defaultRestingHR) + AutoWorkoutDetector.elevatedMarginBPM
+        val floor = AutoWorkoutDetector.elevatedFloor(restingHR, hrMax)
         val hasMotion = gravity.isNotEmpty()
 
         lines.add(

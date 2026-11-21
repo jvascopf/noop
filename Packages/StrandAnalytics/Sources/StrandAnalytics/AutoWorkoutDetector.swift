@@ -15,7 +15,8 @@ import WhoopProtocol
 // remains frozen while the duration alternatives collect local shadow evidence.
 //
 // The published thresholds here are intentionally CONSERVATIVE (low sensitivity): a sustained ≥ 12-min
-// elevation of HR ≥ resting + 30 bpm, brief (≤ 90 s) dips tolerated, near windows merged. Tuned
+// span of of HR ≥ resting + 30 bpm (or resting + 40% of the HR reserve when max HR is known, whichever
+// is higher), brief (≤ 90 s) dips tolerated, near windows merged. Tuned
 // to avoid false positives from stress / caffeine / a brief flight of stairs, at the cost of
 // missing the odd short or gentle session — exactly right for a SUGGESTION you can decline. An
 // OPTIONAL continuous motion signal, when one is readily available, is required as confirmation;
@@ -66,6 +67,20 @@ public enum AutoWorkoutDetector {
     public static let elevatedMarginBPM = 30
     /// A candidate must hold the elevated gate for a contiguous span of at least this long (12 min).
     public static let minSustainedMin: Double = 12.0
+    /// A suggested window must last at least this long (20 min). Applied by the Today card's caller to
+    /// `detect`'s merged windows (`isLongEnoughToSuggest`), so intervals of two 12+ min blocks around a short
+    /// rest still count while a 15-minute walk does not, and the shadow diagnostics keep measuring the span
+    /// policy alone. Personal-fork rule. Kotlin twin: `AutoWorkoutDetector.minWindowMin`.
+    public static let minWindowMin: Double = 20.0
+
+    /// Whether a detected window lasts `minWindowMin`. Kotlin twin: `AutoWorkoutDetector.isLongEnoughToSuggest`.
+    public static func isLongEnoughToSuggest(_ w: DetectedWorkout) -> Bool {
+        Double(w.endSec - w.startSec) >= minWindowMin * 60.0
+    }
+    /// With a known max HR the gate also needs this share of the heart-rate reserve above resting HR
+    /// (Karvonen 40%, the bottom of zone 2), so an easy walk that clears resting + 30 bpm does not count.
+    /// The +30 bpm margin stays as the lower bound. Kotlin twin: `AutoWorkoutDetector.reserveFraction`.
+    public static let reserveFraction = 0.40
     /// Candidate duration policies evaluated only by local Test Centre shadow diagnostics.
     /// The published confirmation path continues to use `minSustainedMin` (12 minutes).
     public static let shadowSustainedMinutes: [Double] = [10.0, 15.0]
@@ -79,6 +94,16 @@ public enum AutoWorkoutDetector {
     public static let motionConfirmMean = 0.05
     /// Resting-HR fallback when the caller has no nightly RHR for the day.
     public static let defaultRestingHR = 60
+
+    /// The bpm a sample must reach to count as working: resting + `elevatedMarginBPM`, raised to resting +
+    /// `reserveFraction` of the reserve when `hrMax` is known and above resting. Kotlin twin:
+    /// `AutoWorkoutDetector.elevatedFloor`.
+    public static func elevatedFloor(restingBpm: Int?, hrMax: Int?) -> Int {
+        let rest = restingBpm ?? defaultRestingHR
+        let margin = rest + elevatedMarginBPM
+        guard let hrMax, hrMax > rest else { return margin }
+        return max(margin, rest + Int((reserveFraction * Double(hrMax - rest)).rounded()))
+    }
 
     // MARK: - Inputs
 
@@ -149,11 +174,12 @@ public enum AutoWorkoutDetector {
                               restingBpm: Int?,
                               motion: [MotionPoint]? = nil,
                               savedSpans: [SavedWorkoutSpan] = [],
-                              minimumSustainedMinutes: Double = minSustainedMin) -> [DetectedWorkout] {
+                              minimumSustainedMinutes: Double = minSustainedMin,
+                              hrMax: Int? = nil) -> [DetectedWorkout] {
         let seg = hr.sorted { $0.ts < $1.ts }
         if seg.isEmpty { return [] }
 
-        let floor = (restingBpm ?? defaultRestingHR) + elevatedMarginBPM
+        let floor = elevatedFloor(restingBpm: restingBpm, hrMax: hrMax)
 
         // --- 1 + 2 + 3: grow sustained spans tolerating brief dips ---
         // A span is [spanStart, spanEnd] over ELEVATED-sample timestamps. `dipStart` marks where the

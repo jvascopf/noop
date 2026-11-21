@@ -135,6 +135,35 @@ class AutoWorkoutDetectorTest {
         assertEquals(1, AutoWorkoutDetector.detect(hr).size)
     }
 
+    @Test fun reserveFloorDropsAnEasyWalk() {
+        // Resting 55, max 190: reserve 135, 40% = 54 → floor 109 (above the +30 margin of 85).
+        assertEquals(109, AutoWorkoutDetector.elevatedFloor(55, 190))
+        assertEquals(85, AutoWorkoutDetector.elevatedFloor(55, null))
+        assertEquals(85, AutoWorkoutDetector.elevatedFloor(55, 120))
+        assertEquals(108, AutoWorkoutDetector.elevatedFloor(null, 180))
+        val start = 11_000_000L
+        val walk = block(start - 300, 300, 65) + block(start, 30 * 60, 98) + block(start + 1800, 300, 65)
+        assertEquals("+30 alone keeps the walk", 1, AutoWorkoutDetector.detect(walk, restingHR = 55).size)
+        assertTrue(AutoWorkoutDetector.detect(walk, restingHR = 55, hrMax = 190).isEmpty())
+        val run = block(start - 300, 300, 65) + block(start, 30 * 60, 140) + block(start + 1800, 300, 65)
+        assertEquals(1, AutoWorkoutDetector.detect(run, restingHR = 55, hrMax = 190).size)
+    }
+
+    @Test fun shortMergedWindowIsNotSuggested() {
+        // One 15 min bout clears the 12-min span rule but not the 20-min window rule; two 15 min bouts
+        // around a 3 min rest merge into a ~33 min window that does.
+        val start = 12_000_000L
+        val hr = block(start - 300, 300, 65) + block(start, 15 * 60, 120) + block(start + 900, 300, 65)
+        val single = AutoWorkoutDetector.detect(hr, restingHR = 60)
+        assertEquals(1, single.size)
+        assertTrue(!AutoWorkoutDetector.isLongEnoughToSuggest(single[0]))
+        val intervals = block(start, 15 * 60, 120) + block(start + 900, 3 * 60, 65) +
+            block(start + 1080, 15 * 60, 120)
+        val merged = AutoWorkoutDetector.detect(intervals, restingHR = 60)
+        assertEquals(1, merged.size)
+        assertTrue(AutoWorkoutDetector.isLongEnoughToSuggest(merged[0]))
+    }
+
     @Test fun configurableQualificationHasExactTenMinuteBoundary() {
         val start = 10_000_000L
         val nineMinutesFiftyNine = block(start, 10 * 60, 120) // inclusive span is 599 s

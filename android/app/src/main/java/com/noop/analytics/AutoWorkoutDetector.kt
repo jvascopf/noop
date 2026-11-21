@@ -39,6 +39,24 @@ object AutoWorkoutDetector {
     const val minSustainedMin: Double = 12.0
 
     /**
+     * A suggested window must last at least this long (20 min). Applied by the Today card's caller to
+     * [detect]'s merged windows ([isLongEnoughToSuggest]), so intervals of two 12+ min blocks around a short
+     * rest still count while a 15-minute walk does not, and the shadow diagnostics keep measuring the span
+     * policy alone. Personal-fork rule. Swift twin: `AutoWorkoutDetector.minWindowMin`.
+     */
+    const val minWindowMin: Double = 20.0
+
+    /** Whether a detected window lasts [minWindowMin]. Swift twin: `AutoWorkoutDetector.isLongEnoughToSuggest`. */
+    fun isLongEnoughToSuggest(w: DetectedWorkout): Boolean = (w.endSec - w.startSec) >= minWindowMin * 60.0
+
+    /**
+     * With a known max HR the gate also needs this share of the heart-rate reserve above resting HR
+     * (Karvonen 40%, the bottom of zone 2). The +30 bpm margin stays as the lower bound.
+     * Swift twin: `AutoWorkoutDetector.reserveFraction`.
+     */
+    const val reserveFraction: Double = 0.40
+
+    /**
      * Candidate duration policies evaluated only by the local Workouts Test Centre shadow pass.
      * Neither value changes the published 12-minute suggestion policy until labelled real-world
      * validation supports a rollout decision.
@@ -104,10 +122,23 @@ object AutoWorkoutDetector {
     }
 
     /**
+     * The bpm a sample must reach to count as working: resting + [elevatedMarginBPM], raised to resting +
+     * [reserveFraction] of the reserve when [hrMax] is known and above resting.
+     * Swift twin: `AutoWorkoutDetector.elevatedFloor`.
+     */
+    fun elevatedFloor(restingHR: Int?, hrMax: Int?): Int {
+        val rest = restingHR ?: defaultRestingHR
+        val margin = rest + elevatedMarginBPM
+        if (hrMax == null || hrMax <= rest) return margin
+        return maxOf(margin, rest + Math.round(reserveFraction * (hrMax - rest).toDouble()).toInt())
+    }
+
+    /**
      * Detect candidate sustained-elevated-HR workout windows.
      *
      * Algorithm (kept byte-identical with the Swift twin):
-     *  1. Sort HR ascending. Floor = restingHR + [elevatedMarginBPM]. Walk the samples; a sample is
+     *  1. Sort HR ascending. Floor = [elevatedFloor] (restingHR + [elevatedMarginBPM], or restingHR +
+     *     [reserveFraction] of the reserve when [hrMax] is known, whichever is higher). Walk the samples; a sample is
      *     "elevated" when bpm >= floor.
      *  2. Grow a contiguous span across elevated samples. A run of NON-elevated samples is tolerated
      *     (does not end the span) ONLY while the dip's wall-clock duration stays <= [maxDipS]; a longer
@@ -125,6 +156,7 @@ object AutoWorkoutDetector {
      * @param savedWorkouts already-saved workout windows as (startSec, endSec) pairs to exclude by overlap.
      * @param minimumSustainedMinutes qualification duration. The default preserves the published
      *   12-minute suggestion behavior; other values are for explicit shadow evaluation only.
+     * @param hrMax the user's max HR; null keeps the plain +30 bpm gate.
      */
     fun detect(
         hr: List<HrSample>,
@@ -132,11 +164,12 @@ object AutoWorkoutDetector {
         gravity: List<GravitySample> = emptyList(),
         savedWorkouts: List<Pair<Long, Long>> = emptyList(),
         minimumSustainedMinutes: Double = minSustainedMin,
+        hrMax: Int? = null,
     ): List<DetectedWorkout> {
         val seg = cleanHR(hr)
         if (seg.isEmpty()) return emptyList()
 
-        val floor = (restingHR ?: defaultRestingHR) + elevatedMarginBPM
+        val floor = elevatedFloor(restingHR, hrMax)
 
         // --- 1+2+3: grow sustained spans tolerating brief dips ---
         // A span is [spanStart, spanEnd] over ELEVATED-sample timestamps. `dipStart` marks where the

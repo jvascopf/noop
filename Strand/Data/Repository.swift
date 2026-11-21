@@ -3275,6 +3275,8 @@ final class Repository: ObservableObject {
 
         // Resting HR: most recent nightly RHR in range, else the detector's own default (60).
         let restingBpm = days.last(where: { $0.restingHr != nil })?.restingHr
+        // Max HR (profile override, else the age estimate) lifts the gate to resting + 40% of the reserve.
+        let hrMax = strainProfile.map { Int($0.hrMax.rounded()) }
 
         // Exclude every already-saved workout window (any source , strap, manual, imported, detected).
         let saved = await workoutRows()
@@ -3289,7 +3291,7 @@ final class Repository: ObservableObject {
             let (results, trace) = AutoWorkoutDetector.detectTrace(
                 hr: hr, restingBpm: restingBpm, motion: nil, savedSpans: savedSpans,
                 minimumSustainedMinutes: AutoWorkoutDetector.minSustainedMin,
-                path: "autoDetect")
+                hrMax: hrMax, path: "autoDetect")
             for line in trace { emitWorkouts(line) }
             let labelledSpans = saved
                 // `workoutRows()` intentionally returns long-lived history for the UI. Shadow candidates
@@ -3308,10 +3310,11 @@ final class Repository: ObservableObject {
         } else {
             candidates = AutoWorkoutDetector.detect(hr: hr, restingBpm: restingBpm,
                                                     motion: nil, savedSpans: savedSpans,
-                                                    minimumSustainedMinutes: AutoWorkoutDetector.minSustainedMin)
+                                                    minimumSustainedMinutes: AutoWorkoutDetector.minSustainedMin,
+                                                    hrMax: hrMax)
         }
         return Self.selectAutoDetectCandidate(
-            candidates,
+            candidates.filter(AutoWorkoutDetector.isLongEnoughToSuggest),
             autoDismissedTokens: autoDetectDismissedSpans,
             detectedDismissedTokens: dismissedDetectedSpans)
     }

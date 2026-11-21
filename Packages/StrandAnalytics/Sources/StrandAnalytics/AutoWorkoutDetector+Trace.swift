@@ -40,16 +40,17 @@ extension AutoWorkoutDetector {
                                    motion: [MotionPoint]? = nil,
                                    savedSpans: [SavedWorkoutSpan] = [],
                                    minimumSustainedMinutes: Double = minSustainedMin,
+                                   hrMax: Int? = nil,
                                    path: String = "autoDetect")
         -> (results: [DetectedWorkout], trace: [String]) {
 
         // The result the Today card reads, verbatim, so the trace cannot diverge from it.
         let results = detect(hr: hr, restingBpm: restingBpm, motion: motion,
                              savedSpans: savedSpans,
-                             minimumSustainedMinutes: minimumSustainedMinutes)
+                             minimumSustainedMinutes: minimumSustainedMinutes, hrMax: hrMax)
 
         var lines: [String] = []
-        let floor = (restingBpm ?? defaultRestingHR) + elevatedMarginBPM
+        let floor = elevatedFloor(restingBpm: restingBpm, hrMax: hrMax)
         let hasMotion = !(motion?.isEmpty ?? true)
 
         // Inputs the detector saw.

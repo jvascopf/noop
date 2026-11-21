@@ -128,6 +128,35 @@ final class AutoWorkoutDetectorTests: XCTestCase {
         XCTAssertEqual(AutoWorkoutDetector.detect(hr: hr, restingBpm: nil).count, 1)
     }
 
+    func testReserveFloorDropsAnEasyWalk() {
+        // Resting 55, max 190: reserve 135, 40% = 54 → floor 109 (above the +30 margin of 85).
+        XCTAssertEqual(AutoWorkoutDetector.elevatedFloor(restingBpm: 55, hrMax: 190), 109)
+        XCTAssertEqual(AutoWorkoutDetector.elevatedFloor(restingBpm: 55, hrMax: nil), 85)
+        XCTAssertEqual(AutoWorkoutDetector.elevatedFloor(restingBpm: 55, hrMax: 120), 85)
+        XCTAssertEqual(AutoWorkoutDetector.elevatedFloor(restingBpm: nil, hrMax: 180), 108)
+        let start = 11_000_000
+        let walk = block(start - 300, 300, 65) + block(start, 30 * 60, 98) + block(start + 1800, 300, 65)
+        XCTAssertEqual(AutoWorkoutDetector.detect(hr: walk, restingBpm: 55).count, 1, "+30 alone keeps the walk")
+        XCTAssertTrue(AutoWorkoutDetector.detect(hr: walk, restingBpm: 55, hrMax: 190).isEmpty)
+        let run = block(start - 300, 300, 65) + block(start, 30 * 60, 140) + block(start + 1800, 300, 65)
+        XCTAssertEqual(AutoWorkoutDetector.detect(hr: run, restingBpm: 55, hrMax: 190).count, 1)
+    }
+
+    func testShortMergedWindowIsNotSuggested() {
+        // One 15 min bout clears the 12-min span rule but not the 20-min window rule; two 15 min bouts
+        // around a 3 min rest merge into a ~33 min window that does.
+        let start = 12_000_000
+        let hr = block(start - 300, 300, 65) + block(start, 15 * 60, 120) + block(start + 900, 300, 65)
+        let single = AutoWorkoutDetector.detect(hr: hr, restingBpm: 60)
+        XCTAssertEqual(single.count, 1)
+        XCTAssertFalse(AutoWorkoutDetector.isLongEnoughToSuggest(single[0]))
+        let intervals = block(start, 15 * 60, 120) + block(start + 900, 3 * 60, 65)
+            + block(start + 1080, 15 * 60, 120)
+        let merged = AutoWorkoutDetector.detect(hr: intervals, restingBpm: 60)
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertTrue(AutoWorkoutDetector.isLongEnoughToSuggest(merged[0]))
+    }
+
     func testTenMinuteShadowPolicyBoundary() {
         let start = 10_000_000
         let below = elapsedSpan(start, 10 * 60 - 1, 120)
