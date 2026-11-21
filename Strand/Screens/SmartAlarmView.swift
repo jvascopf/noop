@@ -143,7 +143,7 @@ struct SmartAlarmView: View {
                     }
                 }
                 Text(windDownOn
-                     ? "A calm nudge \(WindDownNudge.sleepNeedMinutes / 60)h \(WindDownNudge.leadMinutes)m before your usual wake time."
+                     ? "A calm nudge \(WindDownNudge.offsetHoursMinutes.hours)h \(WindDownNudge.offsetHoursMinutes.minutes)m before your usual wake time."
                      : "Turn on the wind-down reminder below to land at your usual wake time rested.")
                     .font(StrandFont.footnote)
                     .foregroundStyle(StrandPalette.textSecondary)
