@@ -354,6 +354,7 @@ struct StrandiOSApp: App {
                     await watch.pushLatest(from: model)
                 }
             } else if phase == .background {
+                model.persistActiveWorkout()
                 // Leaving the screen is the last moment NOOP is sure to be running: a swipe away ends it from
                 // here. Three hours on, with no sync since, the reminder shows.
                 model.rearmSyncReminder()
