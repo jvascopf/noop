@@ -93,10 +93,7 @@ struct StrandApp: App {
                 .environmentObject(model.live)
                 .environment(\.locale, AppLanguage.activeLocale)
         } label: {
-            MenuBarLabel()
-                .environmentObject(model)
-                .environmentObject(model.repo)
-                .environmentObject(model.live)
+            MenuBarLabel(model: model)
                 .environment(\.locale, AppLanguage.activeLocale)
         }
         .menuBarExtraStyle(.window)
