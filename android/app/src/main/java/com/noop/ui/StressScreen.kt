@@ -667,7 +667,7 @@ private fun StressDaytimeSection(
                         if (usesPersonalBaseline) {
                             R.string.stress_timeline_caption_personal
                         } else {
-                            R.string.stress_timeline_caption_day
+                            R.string.stress_timeline_caption_day_typical
                         }
                     ),
                     style = NoopType.footnote,

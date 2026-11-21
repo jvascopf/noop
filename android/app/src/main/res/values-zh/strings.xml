@@ -2878,4 +2878,5 @@
     <string name="stress_lenses_footnote">来自昨晚睡眠的额外 HRV 读数，取其 5 分钟窗口的中位数（两种方法所假设的记录时长）。仅供参考，不会改变上方的压力评分。</string>
     <string name="stress_baevsky_caption">睡眠期间心律的僵硬程度。静息时约 50–150 属典型；远高于此表示心律僵硬、处于压力状态。</string>
     <string name="stress_methodology_v2">我们将昨晚的静息心率和你 7 天的 HRV 趋势与之前 30 天进行比较。在你正常的夜间波动范围内的小变化视为正常的一天；超出范围时，静息心率升高和 HRV 降低会推高评分。两项偏差取平均后映射到 0-3 分：0 为平静，1.5 为你的基线，3 为高度激活。它既反映心理压力，也反映身体负荷（训练、疾病、饮酒、睡眠不足）。</string>
+    <string name="stress_timeline_caption_day_typical">这条线显示你每个清醒小时根据心率得出的 0–3 值，并与你今天典型的清醒小时比较；小幅变化视为正常。下方的条形图将你的一天分为平静、中等压力和高压力时间。</string>
 </resources>

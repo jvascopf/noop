@@ -12,8 +12,9 @@ import WhoopProtocol
 //   • mean HR over the hour                    (HR up   = stress, like daily RHR)
 //   • RMSSD over the hour's clean R-R          (HRV down = stress, like daily avgHRV)
 //
-// and z-scores each against the day's OWN quiet reference (the calm-hour median + the
-// spread across hours), then squashes the z-sum onto 0–3 with the identical logistic
+// and z-scores each against a reference (personal fork, `.dayRelative`: the day's TYPICAL waking
+// hour by HR alone, spread floored at 3 bpm, ±0.5 SD neutral band), then squashes onto 0–3 with the
+// identical logistic
 //   stress = 3 / (1 + e^(−raw)). 0 calm · 1.5 baseline · 3 high — same bands as the daily
 // score. The day is its own baseline: a desk day with one tense afternoon reads that
 // afternoon as elevated *relative to that person's own calm hours*, no cloud, no history
@@ -111,6 +112,10 @@ public enum DaytimeStress {
     /// the exact regression `baselineRelativeHighMarginBPM`'s comment warns against. Flip to `true`
     /// only once daytime HR+RMSSD is validated to beat HR-only on an Oura-style stress reference.
     public static let daytimeRMSSDScoringEnabled: Bool = false
+
+    /// Floor on the across-hour HR spread in `.dayRelative` (bpm), so a very flat day does not turn a
+    /// 2-3 bpm wobble into a large deviation. Personal fork. Kotlin twin: `dayRelativeHrSdFloorBpm`.
+    public static let dayRelativeHRSDFloorBPM: Double = 3.0
 
     // MARK: - Scoring mode
 
@@ -489,13 +494,24 @@ public enum DaytimeStress {
             // Ambulatory hours are excluded from the day's OWN calm reference too (the motion
             // gate): an exertion hour's elevated HR / suppressed HRV must not pull the calm
             // anchor up or inflate the across-hour spread the z-scores divide by.
+            //
+            // Personal fork: centred on the day's TYPICAL waking hour (the median), not its calm quartile,
+            // which put an ordinary hour above the reference by construction and read most days as HIGH.
+            // HR only, like the validated `.baselineRelative` mode (daytime RMSSD is artifact-dominated,
+            // see `daytimeRMSSDScoringEnabled`); the spread is floored at `dayRelativeHRSDFloorBPM`, and
+            // the level applies the same ±0.5 SD neutral band as `DailyStressScore`.
             let referenceAggs = aggs.filter { isWakingHour($0.bucket) && !isAmbulatory($0.bucket) }
             let hrMeans = referenceAggs.compactMap { $0.meanHR }
             let rmssdVals = referenceAggs.compactMap { $0.rmssd }
-            refHR = calmReference(hrMeans, calmIsLow: true)         // calm HR is LOW
-            refRMSSD = calmReference(rmssdVals, calmIsLow: false)   // calm HRV is HIGH
-            sdHR = std(hrMeans, mean: mean(hrMeans))
-            sdRMSSD = std(rmssdVals, mean: mean(rmssdVals))
+            refHR = typicalReference(hrMeans)
+            sdHR = max(std(hrMeans, mean: mean(hrMeans)), dayRelativeHRSDFloorBPM)
+            if daytimeRMSSDScoringEnabled {
+                refRMSSD = typicalReference(rmssdVals)
+                sdRMSSD = std(rmssdVals, mean: mean(rmssdVals))
+            } else {
+                refRMSSD = nil
+                sdRMSSD = 0
+            }
             hrOnlyFallback = false
 
         case .baselineRelative(let hrBaseline, let rmssdBaseline):
@@ -556,9 +572,10 @@ public enum DaytimeStress {
             let masked = a.meanHR != nil && (ambulatory(a.bucket) || shadow)
             // Score only when at least one signal is present AND HR cleared the count gate AND the
             // hour was not motion-masked (HR is the always-available anchor; RMSSD enriches it).
+            let raw = rawScore(hr: a.meanHR, meanHR: refHR, sdHR: sdHR,
+                               rmssd: a.rmssd, meanRMSSD: refRMSSD, sdRMSSD: sdRMSSD)
             let level: Double? = (a.meanHR != nil && !masked)
-                ? squash(rawScore(hr: a.meanHR, meanHR: refHR, sdHR: sdHR,
-                                  rmssd: a.rmssd, meanRMSSD: refRMSSD, sdRMSSD: sdRMSSD))
+                ? squash(mode == .dayRelative ? DailyStressScore.beyondNeutral(raw) : raw)
                 : nil
             points.append(HourPoint(hour: hourOfDay, startTs: wallStart,
                                     level: level, meanHR: a.meanHR, rmssd: a.rmssd,
@@ -633,14 +650,12 @@ public enum DaytimeStress {
         return hourOfDay >= wakingStartHour && hourOfDay < wakingEndHour
     }
 
-    /// The day's "calm" reference for a signal: the quartile toward the calm end (lower
-    /// quartile when calm is LOW, e.g. HR; upper quartile when calm is HIGH, e.g. RMSSD).
-    /// Falls back to the plain mean below 4 values, and to nil when empty.
-    static func calmReference(_ xs: [Double], calmIsLow: Bool) -> Double? {
+    /// The day's typical value for a signal: the median, or the plain mean below 4 values; nil when empty.
+    /// Kotlin twin: `DaytimeStress.typicalReference`.
+    static func typicalReference(_ xs: [Double]) -> Double? {
         guard !xs.isEmpty else { return nil }
         guard xs.count >= 4 else { return mean(xs) }
-        let s = xs.sorted()
-        return calmIsLow ? quantile(s, 0.25) : quantile(s, 0.75)
+        return quantile(xs.sorted(), 0.5)
     }
 
     /// Linear-interpolated quantile of an already-sorted, non-empty array.

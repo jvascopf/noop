@@ -388,7 +388,7 @@ struct StressView: View {
     private var daytimeTimelineCaption: LocalizedStringKey {
         daytimeUsesPersonalBaseline
             ? "The line is each waking hour's 0-3 proxy, scored against your personal daytime baseline (how your own days usually run). The bar below splits your day into calm, moderate and high stress time."
-            : "The line is each waking hour's 0-3 proxy, scored against your own calm hours today. The bar below splits your day into calm, moderate and high stress time."
+            : "The line is each waking hour's 0-3 proxy from your heart rate, compared with your typical waking hour today; small changes count as normal. The bar below splits your day into calm, moderate and high stress time."
     }
 
     /// A passive, in-app nudge to run a Breathe session after a sustained high-stress run.

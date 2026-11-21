@@ -46,18 +46,19 @@ class DaytimeStressTest {
             "${it.startTs}:" + (it.level?.let { l -> String.format(java.util.Locale.US, "%.6f", l) } ?: "nil")
         }
         assertEquals(
-            "25200:0.990715 28800:1.500000 32400:2.009285 36000:2.413289 39600:2.678875",
+            "25200:0.858415 28800:1.345223 32400:1.500000 36000:1.654777 39600:2.141585",
             render(res.hours),
         )
         assertEquals(
-            "23400:0.990715 25200:0.990715 27000:1.500000 28800:1.500000 30600:2.009285 " +
-                "32400:2.009285 34200:2.413289 36000:2.413289 37800:2.678875 39600:2.678875",
+            "23400:0.858415 25200:0.858415 27000:1.345223 28800:1.345223 30600:1.500000 " +
+                "32400:1.500000 34200:1.654777 36000:1.654777 37800:2.141585 39600:2.141585",
             render(res.timeline),
         )
         // The day-level figures the twin reports for the same input, all still hourly-derived.
-        assertEquals(180, res.highStressMinutes)
-        assertTrue(res.sustainedHigh)
-        assertEquals(3, res.sustainedRun)
+        // Personal fork: the typical hour is the reference, so only the top hour of this steady climb is HIGH.
+        assertEquals(60, res.highStressMinutes)
+        assertFalse(res.sustainedHigh)
+        assertEquals(1, res.sustainedRun)
         assertEquals(39600L, res.peak?.startTs)
     }
 

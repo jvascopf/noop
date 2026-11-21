@@ -99,13 +99,14 @@ final class DaytimeStressTests: XCTestCase {
                 .joined(separator: " ")
         }
         XCTAssertEqual(render(res.hours),
-                       "25200:0.990715 28800:1.500000 32400:2.009285 36000:2.413289 39600:2.678875")
+                       "25200:0.858415 28800:1.345223 32400:1.500000 36000:1.654777 39600:2.141585")
         XCTAssertEqual(render(res.timeline),
-                       "23400:0.990715 25200:0.990715 27000:1.500000 28800:1.500000 30600:2.009285 "
-                       + "32400:2.009285 34200:2.413289 36000:2.413289 37800:2.678875 39600:2.678875")
-        XCTAssertEqual(res.highStressMinutes, 180)
-        XCTAssertTrue(res.sustainedHigh)
-        XCTAssertEqual(res.sustainedRun, 3)
+                       "23400:0.858415 25200:0.858415 27000:1.345223 28800:1.345223 30600:1.500000 "
+                       + "32400:1.500000 34200:1.654777 36000:1.654777 37800:2.141585 39600:2.141585")
+        // Personal fork: the typical hour is the reference, so only the top hour of this steady climb is HIGH.
+        XCTAssertEqual(res.highStressMinutes, 60)
+        XCTAssertFalse(res.sustainedHigh)
+        XCTAssertEqual(res.sustainedRun, 1)
         XCTAssertEqual(res.peak?.startTs, 39600)
     }
 
@@ -150,9 +151,10 @@ final class DaytimeStressTests: XCTestCase {
     }
 
     func testSustainedHighFlagsAfterThreeConsecutiveHighHours() {
-        // A calm morning, then three increasingly tense afternoon hours that finish HIGH.
+        // A calm day, then three increasingly tense afternoon hours that finish HIGH. Six calm hours, so
+        // the typical hour (the day-relative reference) is a calm one.
         var hr: [HRSample] = []
-        for h in [8, 9, 10] { hr += hourHR(h, bpm: 58) }   // calm baseline hours
+        for h in [7, 8, 9, 10, 11, 12] { hr += hourHR(h, bpm: 58) }   // calm baseline hours
         hr += hourHR(13, bpm: 120)
         hr += hourHR(14, bpm: 125)
         hr += hourHR(15, bpm: 130)
@@ -209,9 +211,10 @@ final class DaytimeStressTests: XCTestCase {
         XCTAssertTrue(r.hours.contains { $0.hour == 7 })
     }
 
-    func testRMSSDLowersStressDirectionMatchesDailyScore() {
-        // Same HR across hours; the hour with the LOWEST HRV (RMSSD) should read more
-        // stressed — the same directionality as the daily score (HRV down = stress).
+    func testDayRelativeIgnoresDaytimeRMSSD() {
+        // Personal fork: the day-relative mode scores HR only, like the validated baseline mode, because
+        // daytime RMSSD off the wrist is artifact-dominated (`daytimeRMSSDScoringEnabled`). Same HR across
+        // hours, so one hour's suppressed RMSSD must not change its level.
         var hr: [HRSample] = []
         var rr: [RRInterval] = []
         for h in [8, 9, 10, 11] { hr += hourHR(h, bpm: 65) }
@@ -223,7 +226,7 @@ final class DaytimeStressTests: XCTestCase {
         let r = DaytimeStress.analyze(hr: hr, rr: rr)
         let relaxed = r.scored.first { $0.hour == 9 }!.level!
         let tense = r.scored.first { $0.hour == 11 }!.level!
-        XCTAssertGreaterThan(tense, relaxed)
+        XCTAssertEqual(tense, relaxed, accuracy: 1e-12)
     }
 
     /// R-R for one hour with a controllable beat-to-beat jitter (drives RMSSD).
