@@ -2883,9 +2883,7 @@
     <string name="raw_diag_ecg_probe_running">Une capture est peut-être encore active sur ce bracelet. Le verdict est écrit dans le strap log.</string>
     <string name="today_customize_live_session_availability">Apparaît aujourd’hui si les sessions en direct sont activées dans Paramètres ou si une session est active.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Aujourd\'hui à votre façon, fréquence cardiaque lisible par toute application, et l\'italien</string>
-<<<<<<< HEAD
     <string name="sleep_debt_from_whoop">De WHOOP</string>
-=======
     <string name="weekly_digest_balance_overreaching">Ton Effort a dépassé ta Charge cette semaine : tu as tiré sur la corde. Surveille une baisse de récupération.</string>
     <string name="weekly_digest_balance_balanced">Effort et Charge ont évolué ensemble cette semaine : une charge soutenable.</string>
     <string name="weekly_digest_balance_underloaded">Tu as eu plus de Charge que tu n\'en as dépensé cette semaine : il y a de la marge pour pousser si tu veux.</string>
@@ -2906,5 +2904,4 @@
         <item quantity="one">La semaine dernière n\'avait qu\'%1$d jour de données, donc les écarts d\'une semaine à l\'autre sont approximatifs, pas une tendance.</item>
         <item quantity="other">La semaine dernière n\'avait que %1$d jours de données, donc les écarts d\'une semaine à l\'autre sont approximatifs, pas une tendance.</item>
     </plurals>
->>>>>>> fix/i18n-english-leftovers
 </resources>

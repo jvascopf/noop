@@ -2897,9 +2897,7 @@
     <string name="raw_diag_ecg_probe_running">Auf diesem Strap läuft möglicherweise noch eine Aufzeichnung. Das Ergebnis steht im Strap-Log.</string>
     <string name="today_customize_live_session_availability">Erscheint heute, wenn Live Sessions in den Einstellungen aktiviert sind oder eine Session aktiv ist.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Today nach Ihren Wünschen, Herzfrequenz für jede App und Italienisch</string>
-<<<<<<< HEAD
     <string name="sleep_debt_from_whoop">Von WHOOP</string>
-=======
     <string name="weekly_digest_balance_overreaching">Deine Belastung lag diese Woche über deiner Energie: Du bist in den roten Bereich gegangen. Achte auf einen Einbruch der Erholung.</string>
     <string name="weekly_digest_balance_balanced">Belastung und Energie liefen diese Woche im Gleichschritt: eine nachhaltige Last.</string>
     <string name="weekly_digest_balance_underloaded">Du hattest diese Woche mehr Energie, als du verbraucht hast: Es ist Luft nach oben, wenn du willst.</string>
@@ -2920,5 +2918,4 @@
         <item quantity="one">Letzte Woche gab es nur %1$d Tag mit Daten, daher sind die Änderungen zur Vorwoche grob und kein Trend.</item>
         <item quantity="other">Letzte Woche gab es nur %1$d Tage mit Daten, daher sind die Änderungen zur Vorwoche grob und kein Trend.</item>
     </plurals>
->>>>>>> fix/i18n-english-leftovers
 </resources>
