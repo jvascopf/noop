@@ -313,9 +313,12 @@ struct TrendsView: View {
                         // Week-in-review digest (#208) with prev/next week browsing (#710) — self-hides
                         // only when NO week in history has data. Past weeks render in the same format.
                         weeklyDigestNav
-                        // The Charge / Effort / Rest trio, presented in NOOP's pip language.
-                        weekInReview(charge: metrics.recovery, effort: metrics.strain, rest: metrics.rest)
                         rangeBar(recovery: metrics.recovery)
+                        // The Charge / Effort / Rest averages over the range selected just above, in NOOP's pip
+                        // language. Below the range control and titled "Average": it averages that window (3M by
+                        // default), so above the control and titled "Week in review" it read as a second,
+                        // different figure for the week the digest at the top already summarises.
+                        weekInReview(charge: metrics.recovery, effort: metrics.strain, rest: metrics.rest)
                         heroRecovery(recovery: metrics.recovery)
                         smallMultiples(hrv: metrics.hrv, rhr: metrics.rhr, strain: metrics.strain)
                         // Long-horizon training load (CTL/ATL/TSB). Uses the FULL history, not the
@@ -485,7 +488,7 @@ struct TrendsView: View {
         if chargeAvg != nil || effortAvg != nil || restAvg != nil {
             NoopCard {
                 VStack(alignment: .leading, spacing: NoopMetrics.cardInnerSpacing) {
-                    SectionHeader("Week in review", overline: "Charge · Effort · Rest")
+                    SectionHeader("Average", overline: "Charge · Effort · Rest")
                     if let v = chargeAvg {
                         pipScoreRow(label: "Charge", value: v, range: 0...100,
                                     tint: StrandPalette.chargeColor, frac: v / 100,
