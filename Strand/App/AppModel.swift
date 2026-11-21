@@ -512,6 +512,12 @@ final class AppModel: ObservableObject {
             // history and repair sleep rejected by unmatched WRIST_OFF in one pass. Both persisted flags
             // describe that shared pass; either pending flag triggers it.
             await self.intelligence.runEffortRescoreIfNeeded()
+            // One-shot resting-HR rescore: every computed night's resting HR moved from the lowest 5-min bin to
+            // the deep-sleep mean, so recompute the full history once and have Apple Health replace what it was
+            // given from the old statistic.
+            if await self.intelligence.runOneShotFullRescoreIfNeeded(flagKey: IntelligenceEngine.restingHRRescoreFlagKey) {
+                UserDefaults.standard.set(true, forKey: IntelligenceEngine.restingHRHealthRewriteOwedKey)
+            }
             while !Task.isCancelled {
                 // #547 RE-POLLUTION: a sync since the last tick may have armed a re-heal (its ingest gate
                 // dropped bad-clock records). `runTimestampHealIfNeeded` honours the pending flag even after

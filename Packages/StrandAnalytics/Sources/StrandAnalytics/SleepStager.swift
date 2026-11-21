@@ -50,7 +50,8 @@ public struct SleepSession: Equatable, Sendable {
     /// asleep / in-bed in [0, 1] (AASM TST/TIB; asleep = in-bed − wake).
     public let efficiency: Double
     public let stages: [StageSegment]
-    /// Lowest 5-min rolling-mean HR during the session (bpm), or nil.
+    /// The session's resting HR (bpm): mean HR across its deep-sleep segments, or nil. See
+    /// `SleepStager.sessionDeepSleepRestingHR`.
     public let restingHR: Int?
     /// Mean RMSSD over 5-min windows across the session (ms), or nil.
     public let avgHRV: Double?
@@ -85,6 +86,9 @@ public enum SleepStager {
     /// Minimum plausible mean HR (bpm) for a bin to qualify. A dropout-driven sub-physiological
     /// dip cannot become the floor.
     public static let rhrMinPlausibleBpm: Double = 25
+    /// Minimum plausible HR samples inside a session's deep-sleep segments (~5 min at the strap's 1 Hz)
+    /// for their mean to be the night's resting HR. Fewer falls back to `sessionLowQuartileRestingHR`.
+    public static let rhrMinDeepSleepSamples: Int = 300
 
     // MARK: - Stage 0 constants (sleep.py)
 
@@ -701,7 +705,8 @@ public enum SleepStager {
             out.append(SleepSession(start: p.start, end: p.end,
                                     efficiency: efficiency(start: p.start, end: p.end, stages: stages),
                                     stages: stages,
-                                    restingHR: sessionRestingHR(start: p.start, end: p.end, hr: hrS),
+                                    restingHR: sessionDeepSleepRestingHR(start: p.start, end: p.end,
+                                                                         hr: hrS, stages: stages),
                                     avgHRV: sessionAvgHRV(start: p.start, end: p.end, rr: rrS),
                                     hrOnly: true))
         }
@@ -1609,11 +1614,17 @@ public enum SleepStager {
                                                 bandSleepState: bandSleepState)
             let eff = efficiency(start: p.start, end: p.end, stages: stages)
             let avgHrv = sessionAvgHRV(start: p.start, end: p.end, rr: rrS)
+            let reportedRestingHR = sessionDeepSleepRestingHR(start: p.start, end: p.end, hr: hrS, stages: stages)
             sessions.append(SleepSession(start: p.start, end: p.end, efficiency: eff,
-                                         stages: stages, restingHR: resting, avgHRV: avgHrv))
+                                         stages: stages,
+                                         restingHR: reportedRestingHR,
+                                         avgHRV: avgHrv))
+            // `restingHR` is what the session reports (the deep-sleep mean); `floor` is the lowest bin the
+            // daytime guard above tested, the same naming as the `rhr day=` line.
             traceSink?(GateTrace.runLine(index: runIndex, startTs: p.start, endTs: p.end,
                 verdict: .kept, gate: "accepted",
-                detail: "spanMin=\(spanMin) eff=\(round2(eff)) restingHR=\(resting ?? -1) daytime=\(isDaytime)"))
+                detail: "spanMin=\(spanMin) eff=\(round2(eff)) restingHR=\(reportedRestingHR ?? -1) "
+                    + "floor=\(resting ?? -1) daytime=\(isDaytime)"))
             // #1210 shadow: the band wake-veto is dormant (default-off), but its recovered-vs-reverse ratio
             // can only come from banded nights. When a band stream is present, compute what the veto WOULD
             // recover and trace it — OUTPUT-NEUTRAL: `stages`/`eff` persisted above are the flag-gated
@@ -2922,7 +2933,10 @@ public enum SleepStager {
             + "gated=\(gatedFloor.map(String.init) ?? "nil") shipped=\(shippedFloor) gateMoved=\(moved)"
     }
 
-    static func sessionRestingHR(start: Int, end: Int, hr: [HRSample]) -> Int? {
+    /// The lowest well-populated 5-min bin mean in the session — its "lowest sustained" HR. Not the night's
+    /// resting HR any more (see `sessionDeepSleepRestingHR`); it remains the daytime false-sleep guard's
+    /// "real resting-HR dip" test, whose thresholds were tuned against this statistic.
+    public static func sessionRestingHR(start: Int, end: Int, hr: [HRSample]) -> Int? {
         // A well-populated, plausible bin can win the floor. If none qualifies, use the lowest
         // ungated mean so any in-window data still has a result. The thresholds are unchanged.
         var gated: Double?
@@ -2934,6 +2948,60 @@ public enum SleepStager {
                gated == nil || mean < gated! { gated = mean }
         }
         return (gated ?? ungated).map { Int($0.rounded()) }
+    }
+
+    /// The night's resting HR: the mean of the plausible HR samples inside its deep-sleep segments.
+    ///
+    /// WHOOP measures resting HR during slow-wave sleep, the window NOOP already pools its WHOOP-style HRV
+    /// over (#141). The previous statistic, the lowest 5-min bin, is the single calmest stretch of the
+    /// night rather than a resting level: on one WHOOP 5.0 wearer's 23 nights it averaged 48.9 bpm against
+    /// the 55.5 bpm WHOOP reported for the same wearer the month before, where this averaged 54.9 with a
+    /// night-to-night spread (SD 3.1) close to WHOOP's (3.6). The number is displayed, stored on the
+    /// daily row, exported to Apple Health, and fed to the recovery baseline — whose imported WHOOP history
+    /// sat ~8 bpm above every computed night, reading each as an unusually low resting HR.
+    ///
+    /// Fewer than `rhrMinDeepSleepSamples` deep-sleep samples (no deep staging, or a short nap) falls back to
+    /// `sessionLowQuartileRestingHR` rather than the floor, so the fallback stays on the same level.
+    static func sessionDeepSleepRestingHR(start: Int, end: Int, hr: [HRSample], stages: [StageSegment]) -> Int? {
+        let deep = stages.filter { $0.stage == "deep" && $0.end > $0.start }
+        var sum = 0, n = 0
+        if !deep.isEmpty {
+            for s in hr where s.ts >= start && s.ts <= end && Double(s.bpm) >= rhrMinPlausibleBpm
+                && deep.contains(where: { s.ts >= $0.start && s.ts < $0.end }) {
+                sum += s.bpm; n += 1
+            }
+        }
+        if n >= rhrMinDeepSleepSamples { return Int((Double(sum) / Double(n)).rounded()) }
+        return sessionLowQuartileRestingHR(start: start, end: end, hr: hr)
+    }
+
+    /// The lower quartile of the session's qualifying 5-min bin means — the deep-sleep resting HR's fallback
+    /// for a session with too little deep sleep. On the nights above it sat 0.6 bpm under the deep-sleep mean,
+    /// where the lowest bin sat 6. No qualifying bin falls back to `sessionRestingHR`.
+    static func sessionLowQuartileRestingHR(start: Int, end: Int, hr: [HRSample]) -> Int? {
+        guard let bins = restingBinMeans(start: start, end: end, hr: hr) else { return nil }
+        let gated = bins.gated.sorted()
+        guard !gated.isEmpty else { return sessionRestingHR(start: start, end: end, hr: hr) }
+        return Int(gated[gated.count / 4].rounded())
+    }
+
+    /// 5-min tumbling bin means of the session's HR, split into the bins that qualify
+    /// (≥ `rhrMinBinSamples`, mean ≥ `rhrMinPlausibleBpm`) and all of them, plus the all-sample mean.
+    /// nil when the session holds no samples.
+    private static func restingBinMeans(start: Int, end: Int, hr: [HRSample])
+        -> (gated: [Double], all: [Double], sampleMean: Double)? {
+        let bins = restingHRBins(start: start, end: end, hr: hr)
+        guard !bins.isEmpty else { return nil }
+        var gatedMeans: [Double] = []
+        var allMeans: [Double] = []
+        var total = 0, n = 0
+        for bin in bins {
+            let mean = Double(bin.sum) / Double(bin.count)
+            allMeans.append(mean)
+            if bin.count >= rhrMinBinSamples && mean >= rhrMinPlausibleBpm { gatedMeans.append(mean) }
+            total += bin.sum; n += bin.count
+        }
+        return (gatedMeans, allMeans, Double(total) / Double(n))
     }
 
     /// Nonempty five-minute bins in time order, with the final bin closed on `end`.
