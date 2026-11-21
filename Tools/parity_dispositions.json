@@ -449,11 +449,29 @@
     {
       "type": "out_of_scope_twin",
       "kind": "add-unpaired-function",
+      "identity": "kotlin\u0000android/app/src/main/java/com/noop/analytics/IntelligenceEngine.kt::sameStrapArchivedIds/0#1",
+      "identity_sha256": "0cf3d6dcc38ba31b43ce987be722a37d6d0e72e3c62371fc576af36c63eae235",
+      "platform": "kotlin",
+      "rationale": "Swift IntelligenceEngine.resolveDayOwner finds the archived rows sharing the active row's peripheralId inline in the excluded app layer, from the registry devices it is already handed (#2880); this disposition does not assert behavioral parity.",
+      "twin_path": "Strand/Data/IntelligenceEngine.swift"
+    },
+    {
+      "type": "out_of_scope_twin",
+      "kind": "add-unpaired-function",
       "identity": "kotlin\u0000android/app/src/main/java/com/noop/data/DataBackup.kt::writeBackupZip/4#1",
       "identity_sha256": "c6f74cc3acf36fb9f2695fb06f73513dbd9465c66543c5da266fbc7d6178fd94",
       "platform": "kotlin",
       "rationale": "Refs #2708: the Swift DataBackup.writeBackupZip(dbURL:to:settingsJSON:manifestJSON:) archive writer is in the excluded app layer. This records the container-writing role twin for the Android production stream extraction without asserting byte-identical ZIP compression.",
       "twin_path": "Strand/Data/DataBackup.swift"
+    },
+    {
+      "type": "out_of_scope_twin",
+      "kind": "add-unpaired-function",
+      "identity": "kotlin\u0000android/app/src/main/java/com/noop/analytics/RegistryDayOwnerSource.kt::sameStrapArchivedIds/0#1",
+      "identity_sha256": "626c2434e6281c5981b86f283fe24eaeae697b63499de061d683b990866d7408",
+      "platform": "kotlin",
+      "rationale": "Swift IntelligenceEngine.resolveDayOwner finds the archived rows sharing the active row's peripheralId inline in the excluded app layer, from the registry devices it is already handed (#2880); this disposition does not assert behavioral parity.",
+      "twin_path": "Strand/Data/IntelligenceEngine.swift"
     }
   ]
 }
