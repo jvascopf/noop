@@ -35,13 +35,15 @@ class PrimaryNightRestingHRDailyTest {
         return night + nap
     }
 
-    @Test fun mainNightFloorWinsOverItsMeanAndALowerNap() {
+    @Test fun mainNightRestingHRWinsOverALowerNap() {
         val hr = heartRate()
         assertEquals(55, SleepStager.sessionRestingHR(nightStart, nightStart + 600 * 60, hr))
         assertTrue((AnalyticsEngine.primarySessionRestingHR(sessions(), hr) ?: 0.0) > 69.0)
         val result = AnalyticsEngine.analyzeDay(day = day, hr = hr, rr = emptyList(),
             profile = profile, providedSleep = sessions())
-        assertEquals(55, result.daily.restingHr)
+        // #2284: deep-sleep resting HR; no deep staging here, so the lower-quartile fallback (70), not the
+        // one-bin floor (55), and the lower nap (45) still never wins.
+        assertEquals(70, result.daily.restingHr)
     }
 
     @Test fun providedPrimaryValueStillWins() {

@@ -2,7 +2,7 @@ import XCTest
 @testable import StrandAnalytics
 import WhoopProtocol
 
-/// #2522: the daily RHR takes the primary night's five-minute floor, while the #2358 nap
+/// #2522: the daily RHR comes from the primary night (its deep-sleep value since #2284), while the #2358 nap
 /// selection and #804 provided-value precedence remain intact. Kotlin has the same fixtures.
 final class PrimaryNightRestingHRDailyTests: XCTestCase {
     private let day = "2026-07-27"
@@ -31,13 +31,16 @@ final class PrimaryNightRestingHRDailyTests: XCTestCase {
         return night + nap
     }
 
-    func testMainNightFloorWinsOverItsMeanAndALowerNap() {
+    func testMainNightRestingHRWinsOverALowerNap() {
         let hr = heartRate()
         XCTAssertEqual(SleepStager.sessionRestingHR(start: nightStart, end: nightStart + 600 * 60, hr: hr), 55)
         XCTAssertGreaterThan(AnalyticsEngine.primarySessionRestingHR(sessions: sessions(), hr: hr) ?? 0, 69)
         let result = AnalyticsEngine.analyzeDay(day: day, hr: hr, rr: [], profile: profile,
                                                 providedSleep: sessions())
-        XCTAssertEqual(result.daily.restingHr, 55)
+        // #2284: the daily value is the primary night's deep-sleep resting HR. This night has no deep
+        // staging, so it falls back to the lower quartile of its bins (70), not the one-bin floor (55),
+        // and the lower nap (45) still never wins.
+        XCTAssertEqual(result.daily.restingHr, 70)
     }
 
     func testProvidedPrimaryValueStillWins() {
