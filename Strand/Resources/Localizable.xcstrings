@@ -37498,64 +37498,6 @@
         }
       }
     },
-    "Band Sleep State": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schlafstatus des Bands"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estado de sueño de la pulsera"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "État de sommeil du bracelet"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stato del sonno della fascia"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stan snu opaski"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estado de sono da bracelete"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Состояние сна по браслету"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "手环端睡眠状态"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "手環端睡眠狀態"
-          }
-        }
-      }
-    },
     "Back": {
       "localizations": {
         "de": {
@@ -118136,58 +118078,6 @@
         }
       }
     },
-    "Notifications are off": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Benachrichtigungen sind aus"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las notificaciones están desactivadas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les notifications sont désactivées"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le notifiche sono disattivate"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As notificações estão desativadas"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Уведомления отключены"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通知已关闭"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通知已關閉"
-          }
-        }
-      }
-    },
     "Notifications are off, so this can't buzz yet. Turn on the master switch in Notifications to let it through.": {
       "localizations": {
         "de": {
@@ -121244,58 +121134,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz rytm"
-          }
-        }
-      }
-    },
-    "Open Settings": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einstellungen öffnen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir Ajustes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir Réglages"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apri Impostazioni"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir Definições"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открыть настройки"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开设置"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開設定"
           }
         }
       }
@@ -173299,58 +173137,7 @@
         }
       }
     },
-    "Turn on notifications for NOOP in Settings to get your battery alerts.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schalten Sie Benachrichtigungen für NOOP in den Einstellungen ein, um Ihre Batteriewarnungen zu erhalten."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Encienda las notificaciones para NOOP en Ajustes para obtener sus alertas de batería."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activez les notifications pour NOOP dans Paramètres pour obtenir vos alertes de batterie."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attiva le notifiche per NOOP in Impostazioni per ricevere gli avvisi sulla batteria."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ative as notificações NOOP em Definições para receber os teus alertas de bateria."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Включите уведомления для NOOP в настройках, чтобы получать оповещения о заряде."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在“设置”中为 NOOP 开启通知，以接收电量提醒。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在「設定」中為 NOOP 開啟通知，以接收電量提醒。"
-          }
-        }
-      }
-    },
+    "Turn on notifications for NOOP in Settings to get your battery alerts.": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Schalte die Mitteilungen für NOOP in den Einstellungen ein, um deine Akkuwarnungen zu erhalten."}}, "es": {"stringUnit": {"state": "translated", "value": "Activa las notificaciones de NOOP en Ajustes para recibir tus alertas de batería."}}, "fr": {"stringUnit": {"state": "translated", "value": "Active les notifications de NOOP dans Réglages pour recevoir tes alertes de batterie."}}, "it": {"stringUnit": {"state": "translated", "value": "Attiva le notifiche di NOOP in Impostazioni per ricevere gli avvisi sulla batteria."}}, "pl": {"stringUnit": {"state": "translated", "value": "Włącz powiadomienia NOOP w Ustawieniach, aby otrzymywać alerty o baterii."}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Ativa as notificações do NOOP nas Definições para receberes os alertas de bateria."}}, "ru": {"stringUnit": {"state": "translated", "value": "Включите уведомления для NOOP в настройках, чтобы получать оповещения о заряде."}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "在“设置”中为 NOOP 开启通知，以接收电量提醒。"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "在「設定」中為 NOOP 開啟通知，以接收電量提醒。"}}}},
     "Turn on notifications for NOOP in Settings to get your wind-down reminder.": {
       "localizations": {
         "de": {
@@ -220028,7 +219815,6 @@
         "Schedule": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Zeitplan"}}, "en": {"stringUnit": {"state": "translated", "value": "Schedule"}}, "es": {"stringUnit": {"state": "translated", "value": "Horario"}}, "fr": {"stringUnit": {"state": "translated", "value": "Emploi du temps"}}, "it": {"stringUnit": {"state": "translated", "value": "Orario"}}, "pl": {"stringUnit": {"state": "translated", "value": "Harmonogram"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Horário"}}, "ru": {"stringUnit": {"state": "translated", "value": "Расписание"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "日程"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "日程"}}}},
         "Your strap alarm and the wind-down reminder both use this time. It only wakes you when the strap alarm is on.": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Strap-Alarm und Runterkommen-Erinnerung nutzen beide diese Zeit. Wecken tut sie dich nur, wenn der Strap-Alarm an ist."}}, "es": {"stringUnit": {"state": "translated", "value": "La alarma de la pulsera y el recordatorio de relajación usan esta misma hora. Solo te despierta si la alarma de la pulsera está activada."}}, "fr": {"stringUnit": {"state": "translated", "value": "L'alarme du bracelet et le rappel de détente utilisent tous deux cette heure. Elle ne vous réveille que si l'alarme du bracelet est activée."}}, "it": {"stringUnit": {"state": "translated", "value": "La sveglia della fascia e il promemoria per il rilassamento usano entrambi questa ora. Ti sveglia solo se la sveglia della fascia è attiva."}}, "pl": {"stringUnit": {"state": "translated", "value": "Budzik na pasku i przypomnienie o odpoczynku korzystają z tej samej godziny. Budzi Cię tylko wtedy, gdy budzik na pasku jest włączony."}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "O despertador da bracelete e o lembrete para relaxar usam ambos esta hora. Só te acorda quando o despertador da bracelete está ligado."}}, "ru": {"stringUnit": {"state": "translated", "value": "Будильник браслета и напоминание о подготовке ко сну используют это время. Будит оно вас, только если будильник браслета включён."}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "手环闹钟和放松提醒都使用这个时间。只有在手环闹钟开启时，它才会叫醒你。"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "手環鬧鐘和放鬆提醒都使用這個時間。只有在手環鬧鐘開啟時，它才會叫醒你。"}}}},
         "Raw on-device stages": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Rohe Phasen vom Gerät"}}, "es": {"stringUnit": {"state": "translated", "value": "Fases sin procesar del dispositivo"}}, "fr": {"stringUnit": {"state": "translated", "value": "Stades bruts de l'appareil"}}, "it": {"stringUnit": {"state": "translated", "value": "Fasi grezze dal dispositivo"}}, "pl": {"stringUnit": {"state": "translated", "value": "Surowe fazy z urządzenia"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Fases brutas do dispositivo"}}, "ru": {"stringUnit": {"state": "translated", "value": "Исходные стадии с устройства"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "设备端原始睡眠阶段"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "裝置端原始睡眠階段"}}}},
-        "Raw on-device stages": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Rohe Phasen vom Gerät"}}, "es": {"stringUnit": {"state": "translated", "value": "Fases sin procesar del dispositivo"}}, "fr": {"stringUnit": {"state": "translated", "value": "Stades bruts de l'appareil"}}, "it": {"stringUnit": {"state": "translated", "value": "Fasi grezze dal dispositivo"}}, "pl": {"stringUnit": {"state": "translated", "value": "Surowe fazy z urządzenia"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Estágios brutos do dispositivo"}}, "ru": {"stringUnit": {"state": "translated", "value": "Исходные стадии с устройства"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "设备端原始睡眠阶段"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "裝置端原始睡眠階段"}}}},
         "How's my recovery trending this week?": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Wie entwickelt sich meine Erholung diese Woche?"}}, "es": {"stringUnit": {"state": "translated", "value": "¿Cómo evoluciona mi recuperación esta semana?"}}, "fr": {"stringUnit": {"state": "translated", "value": "Comment évolue ma récupération cette semaine ?"}}, "it": {"stringUnit": {"state": "translated", "value": "Come sta andando il mio recupero questa settimana?"}}, "pl": {"stringUnit": {"state": "translated", "value": "Jak zmienia się moja regeneracja w tym tygodniu?"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Como está a evoluir a minha recuperação esta semana?"}}, "ru": {"stringUnit": {"state": "translated", "value": "Как меняется моё восстановление на этой неделе?"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "我这周的恢复趋势如何？"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "我這週的恢復趨勢如何？"}}}},
         "Active recovery only today — what should I do?": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Heute nur aktive Erholung – was soll ich tun?"}}, "es": {"stringUnit": {"state": "translated", "value": "Hoy solo recuperación activa: ¿qué debería hacer?"}}, "fr": {"stringUnit": {"state": "translated", "value": "Récupération active uniquement aujourd'hui : que dois-je faire ?"}}, "it": {"stringUnit": {"state": "translated", "value": "Oggi solo recupero attivo: cosa dovrei fare?"}}, "pl": {"stringUnit": {"state": "translated", "value": "Dziś tylko aktywna regeneracja – co powinienem robić?"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Hoje só recuperação ativa — o que devo fazer?"}}, "ru": {"stringUnit": {"state": "translated", "value": "Сегодня только активное восстановление — что мне делать?"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "今天只做主动恢复——我该做什么？"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "今天只做主動恢復——我該做什麼？"}}}},
         "Quality over volume today — plan my session": {"localizations": {"de": {"stringUnit": {"state": "translated", "value": "Heute Qualität statt Umfang – plane meine Einheit"}}, "es": {"stringUnit": {"state": "translated", "value": "Hoy calidad antes que volumen: planifica mi sesión"}}, "fr": {"stringUnit": {"state": "translated", "value": "La qualité plutôt que le volume aujourd'hui : planifie ma séance"}}, "it": {"stringUnit": {"state": "translated", "value": "Oggi qualità più che volume: pianifica la mia sessione"}}, "pl": {"stringUnit": {"state": "translated", "value": "Dziś jakość ponad objętość – zaplanuj mój trening"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Hoje qualidade acima de volume — planeia a minha sessão"}}, "ru": {"stringUnit": {"state": "translated", "value": "Сегодня качество важнее объёма — спланируй мою тренировку"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "今天重质不重量——帮我规划训练"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "今天重質不重量——幫我規劃訓練"}}}},
