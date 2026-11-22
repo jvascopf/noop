@@ -196,7 +196,9 @@ final class DetectedWorkoutReconciliationTests: XCTestCase {
             UserDefaults.standard.set(true, forKey: PuffinExperiment.autoDetectWorkoutsKey)
             let store = try await WhoopStore.inMemory()
             let start = Int(Date().timeIntervalSince1970) - 2 * 3_600
-            let hr = (0...(13 * 60)).map { HRSample(ts: start + $0, bpm: 120) }
+            // Personal fork: a card needs a 20-minute window (`AutoWorkoutDetector.minWindowMin`), so this
+            // uses 21 minutes; the 12-minute span policy and its 10/15-minute shadows are unchanged.
+            let hr = (0...(21 * 60)).map { HRSample(ts: start + $0, bpm: 120) }
             _ = try await store.insert(Streams(hr: hr), deviceId: deviceId)
 
             let repo = Repository(deviceId: deviceId)
@@ -207,14 +209,14 @@ final class DetectedWorkoutReconciliationTests: XCTestCase {
             let candidate = await repo.autoDetectCandidate(daysBack: 1)
 
             XCTAssertEqual(candidate?.startSec, start)
-            XCTAssertEqual(candidate?.durationMin, 13,
-                           "the visible card must keep the published 12-minute policy")
+            XCTAssertEqual(candidate?.durationMin, 21,
+                           "a window past the 20-minute card floor must still be suggested")
             XCTAssertTrue(diagnostics.contains { $0.contains("minSustainedMin=12.0") })
             XCTAssertTrue(diagnostics.contains {
                 $0.contains("workout shadow policy=10min candidates=1")
             }, "10-minute evaluation must remain a local diagnostic: \(diagnostics)")
             XCTAssertTrue(diagnostics.contains {
-                $0.contains("workout shadow policy=15min candidates=0")
+                $0.contains("workout shadow policy=15min candidates=1")
             }, "15-minute evaluation must remain a local diagnostic: \(diagnostics)")
 
             let importedRows = try await store.workouts(
