@@ -1580,6 +1580,39 @@ struct SleepView: View {
 
     // MARK: - WHOOP stage-timeline rows (the sleep-details reference design, ryanAtriumAi #988)
 
+    /// Night-average HR beside resting HR under the sleeping-HR chart (personal fork, upstream #2799). The
+    /// average covers the whole in-bed span, the "sleeping HR" other apps report and the `nightMean` the
+    /// strap log already prints; resting HR is NOOP's deep-sleep mean. Both on one line explain why another
+    /// app's "night HR" reads several bpm above NOOP's resting HR. iOS/macOS only.
+    @ViewBuilder
+    private func nightHRSummary(_ night: Night) -> some View {
+        if let avg = Self.nightAverageHR(nightHR) {
+            HStack(spacing: NoopMetrics.space3) {
+                nightHRFigure(String(localized: "Night average"), bpm: avg)
+                if let rhr = night.session.restingHr, rhr > 0 {
+                    nightHRFigure(String(localized: "Resting HR"), bpm: rhr)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+        }
+    }
+
+    private func nightHRFigure(_ label: String, bpm: Int) -> some View {
+        HStack(spacing: 5) {
+            Text(label).font(StrandFont.caption).foregroundStyle(StrandPalette.textTertiary)
+            (Text("\(bpm)").font(StrandFont.captionNumber) + Text(" bpm").font(StrandFont.caption))
+                .foregroundStyle(StrandPalette.textSecondary)
+        }
+    }
+
+    /// Mean of the night's one-minute buckets, rounded; nil with no buckets.
+    static func nightAverageHR(_ buckets: [HRBucket]) -> Int? {
+        let bpms = buckets.map(\.bpm).filter { $0 > 0 }
+        guard !bpms.isEmpty else { return nil }
+        return Int((bpms.reduce(0, +) / Double(bpms.count)).rounded())
+    }
+
     /// Clock labels for the timeline axis; "jmm" respects the device 12/24-hour setting.
     /// #1821: routed through AppClock so the Clock format setting reaches this label. Was a `static
     /// let`, which would have frozen the reader's choice at first use until the app relaunched.
@@ -1607,6 +1640,7 @@ struct SleepView: View {
                 .frame(height: 124)
                 .padding(.horizontal, 10)
                 .padding(.bottom, 2)
+            nightHRSummary(night)
             stageTimelineRow(.awake, minutes: s.awake, percent: stageSharePercent(.awake, s), intervals: smoothed, origin: origin, span: span)
             stageTimelineRow(.rem,   minutes: s.rem,   percent: stageSharePercent(.rem, s), intervals: smoothed, origin: origin, span: span)
             stageTimelineRow(.light, minutes: s.light, percent: stageSharePercent(.light, s), intervals: smoothed, origin: origin, span: span)
