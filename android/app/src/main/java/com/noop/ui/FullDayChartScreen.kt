@@ -33,6 +33,8 @@ import com.noop.analytics.HrvAnalyzer
 import com.noop.data.OuraRespScale
 import com.noop.protocol.DeviceFamily
 import com.noop.protocol.skinTempCelsius
+import com.noop.protocol.Whoop4SkinTemp
+import com.noop.analytics.StreamReadCap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -441,8 +443,20 @@ private suspend fun readTimeline(
             val d = runCatching { vm.pairedDevices() }.getOrDefault(emptyList())
                 .firstOrNull { it.id == deviceId }
             val family = DeviceFamily.forRegistryDevice(d?.model, d?.brand) ?: DeviceFamily.WHOOP5
+            // #2884: a WHOOP 4.0's ADC offset is per device. Learn its anchor as the scoring pass does (21 days
+            // plus the stream lookback, median of in-band raws) instead of the global default, which read one
+            // 4.0 ~8 °C high here. A 5/MG or a sparse 4.0 keeps the default. Swift twin:
+            // `Repository.whoop4SkinAnchor`.
+            val anchor = if (family == DeviceFamily.WHOOP4) {
+                val now = System.currentTimeMillis() / 1000
+                val raws = runCatching {
+                    repo.skinTempSamples(deviceId, now - 21L * 86_400 - StreamReadCap.LOOKBACK_SECONDS, now,
+                        StreamReadCap.SKIN)
+                }.getOrDefault(emptyList()).map { it.raw }
+                Whoop4SkinTemp.deviceAnchorRaw(raws)
+            } else null
             runCatching { repo.skinTempSamples(deviceId, from, to, 200_000) }.getOrDefault(emptyList())
-                .map { TimelinePoint(it.ts, skinTempCelsius(it.raw, family)) }
+                .map { TimelinePoint(it.ts, skinTempCelsius(it.raw, family, anchor ?: Whoop4SkinTemp.ANCHOR_RAW)) }
         }
         TimelineMetric.Respiration ->
             // Two quantities share this table: a WHOOP's raw respiration ADC waveform (plotted verbatim,

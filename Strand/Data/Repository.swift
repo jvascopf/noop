@@ -2168,9 +2168,17 @@ final class Repository: ObservableObject {
             }.value
         case .skinTemp:
             let s = (try? await store.skinTempSamples(deviceId: source, from: from, to: to, limit: 200_000)) ?? []
+            // #2884: a WHOOP 4.0's ADC offset is per device. Learn its anchor the way the scoring pass does
+            // (`IntelligenceEngine`'s skin-anchor scan: the 21-day window plus the stream lookback, median of
+            // the in-band raws) instead of the global default, which read one 4.0 ~8 °C high on this chart
+            // while its nightly figure was right. A 5/MG, or a 4.0 with too few in-band raws, keeps the default.
+            let anchor = family == .whoop4 ? await Self.whoop4SkinAnchor(store: store, deviceId: source) : nil
             return await Task.detached(priority: .utility) {
                 // #938: family-aware raw→°C — 5/MG centidegrees (raw/100, #156), 4.0 v24 raw ADC map.
-                s.map { Self.timelinePoint($0.ts, skinTempCelsius(raw: $0.raw, family: family)) }
+                s.map {
+                    Self.timelinePoint($0.ts, skinTempCelsius(raw: $0.raw, family: family,
+                                                              anchorRaw: anchor ?? Whoop4SkinTemp.anchorRaw))
+                }
             }.value
         case .respiration:
             // Two quantities share this table: a WHOOP's raw respiration ADC waveform (plotted verbatim,
@@ -2210,6 +2218,16 @@ final class Repository: ObservableObject {
                 }
             }.value
         }
+    }
+
+    /// The WHOOP 4.0 skin anchor the scoring pass learns (#2884): median in-band raw over the last 21 days
+    /// plus the stream lookback, from the store, so the full-day chart and the nightly figure share a scale.
+    static func whoop4SkinAnchor(store: WhoopStore, deviceId: String,
+                                 now: Int = Int(Date().timeIntervalSince1970)) async -> Double? {
+        let from = now - 21 * 86_400 - StreamReadCap.lookbackSeconds
+        let raws = (try? await store.skinTempSamples(deviceId: deviceId, from: from, to: now,
+                                                     limit: StreamReadCap.skin)) ?? []
+        return Whoop4SkinTemp.deviceAnchorRaw(raws.map(\.raw))
     }
 
     /// Build a `TrendPoint` from a unix-seconds `ts` + value. `nonisolated static` so the per-row
