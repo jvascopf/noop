@@ -221,6 +221,9 @@ public final class LiveState: ObservableObject {
     /// an estimate is sensible before the strap generation is known.
     @Published public var batteryRatedHours: Double = BatteryEstimator.ratedLifeHoursWhoop4
 
+    /// Status line of the WHOOP 4.0 optical probe in the Test Centre (personal fork); nil before any run.
+    @Published public var opticalProbeStatus: String?
+
     /// "~X days left" runtime estimate for the connected strap, computed from the banked SoC samples and
     /// `batteryRatedHours`. nil until there's at least one reading. The Today badge reads this.
     public var batteryEstimate: BatteryEstimator.Estimate? {

@@ -167,6 +167,7 @@ struct TestCentreView: View {
                 domainModesCard.staggeredAppear(index: 0)
                 diagnosticToolsCard.staggeredAppear(index: 1)
                 if is5MG { rawDataCollectorCard.staggeredAppear(index: 2) }
+                if !is5MG && !ouraPaired { opticalProbeCard.staggeredAppear(index: 2) }
                 if is5MG { fiveMGProtocolDiagnosticsCard.staggeredAppear(index: 3) }
                 if ouraPaired { ouraCard.staggeredAppear(index: 2) }
                 exportCard.staggeredAppear(index: 2)
@@ -223,6 +224,36 @@ struct TestCentreView: View {
     }
 
     // MARK: - Section 2: Diagnostic tools (strap log + recalibrate + env dump)
+
+    /// Personal fork: the WHOOP 4.0 SpO₂ feasibility probe (`BLEManager.runOpticalProbe`). A temporary
+    /// research tool, so its copy is verbatim English rather than catalogue strings.
+    @State private var confirmOpticalProbe = false
+    private var opticalProbeCard: some View {
+        NoopCard {
+            VStack(alignment: .leading, spacing: NoopMetrics.space3) {
+                Text(verbatim: "WHOOP 4.0 OPTICAL PROBE")
+                    .font(StrandFont.overline).tracking(StrandFont.overlineTracking)
+                    .foregroundStyle(StrandPalette.textSecondary)
+                Text(verbatim: "Records every frame for 15 s, turns raw data on for 60 s, then off, and saves the frames to a file. Keep the strap on your wrist and stay still.")
+                    .font(StrandFont.caption).foregroundStyle(StrandPalette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button { confirmOpticalProbe = true } label: {
+                    Label { Text(verbatim: "Run optical probe (85 s)") } icon: { Image(systemName: "waveform") }
+                }
+                .buttonStyle(NoopButtonStyle(.primary, fullWidth: true))
+                .disabled(!live.connected)
+                if let status = live.opticalProbeStatus {
+                    Text(verbatim: status).font(StrandFont.caption).foregroundStyle(StrandPalette.textSecondary)
+                }
+            }
+        }
+        .confirmationDialog(Text(verbatim: "Run the optical probe?"), isPresented: $confirmOpticalProbe,
+                            titleVisibility: .visible) {
+            Button { model.ble.runOpticalProbe() } label: { Text(verbatim: "Start") }
+        } message: {
+            Text(verbatim: "Sends START_RAW_DATA to the strap for 60 s and STOP_RAW_DATA afterwards. Both are the commands the raw capture already uses.")
+        }
+    }
 
     @ViewBuilder private var rawDataCollectorCard: some View {
         NoopCard {

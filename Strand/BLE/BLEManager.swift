@@ -2311,6 +2311,70 @@ public final class BLEManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - WHOOP 4.0 optical probe (personal fork, SpO₂ feasibility)
+
+    /// Every notification while the probe runs, as "ms phase uuid hex" lines; nil when no probe is running.
+    private var opticalProbeLines: [String]?
+    private var opticalProbePhase = "baseline"
+
+    /// One bounded feasibility capture for WHOOP 4.0 SpO₂: does START_RAW_DATA make a 4.0 stream an optical
+    /// waveform? Records every notification for 15 s untouched (baseline), sends START_RAW_DATA (81) and
+    /// records 60 s, sends STOP_RAW_DATA, records 10 s more, then writes the lines to
+    /// Documents/optical-probe-<epoch>.txt for offline analysis. Both commands are the ones the existing raw
+    /// capture already sends to a 4.0; nothing else is written. User-initiated and confirmation-gated in the
+    /// Test Centre; never automatic. Returns false when it cannot start.
+    @discardableResult
+    public func runOpticalProbe() -> Bool {
+        guard selectedModel.deviceFamily == .whoop4, commandChannelReady,
+              opticalProbeLines == nil, !rawCaptureInFlight else {
+            log("Optical probe: not started (needs a connected WHOOP 4.0 and no capture running)")
+            return false
+        }
+        opticalProbeLines = []
+        opticalProbePhase = "baseline"
+        state.opticalProbeStatus = "Recording baseline (15 s)…"
+        log("Optical probe: baseline 15 s")
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard let self, self.opticalProbeLines != nil else { return }
+            self.opticalProbePhase = "raw"
+            self.state.opticalProbeStatus = "Raw data on, recording 60 s…"
+            self.log("Optical probe: START_RAW_DATA for 60 s")
+            self.send(.startRawData, payload: [0x01], writeType: .withResponse)
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            if !UserDefaults.standard.bool(forKey: "enableRawCapture") {
+                self.send(.stopRawData, payload: [0x01], writeType: .withResponse)
+            }
+            self.opticalProbePhase = "after"
+            self.log("Optical probe: STOP_RAW_DATA, recording 10 s more")
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+            self.finishOpticalProbe()
+        }
+        return true
+    }
+
+    private func recordOpticalProbe(_ uuid: String, _ bytes: [UInt8]) {
+        let ms = Int64(Date().timeIntervalSince1970 * 1_000)
+        let hex = bytes.map { String(format: "%02x", $0) }.joined()
+        opticalProbeLines?.append("\(ms) \(opticalProbePhase) \(uuid) \(hex)")
+    }
+
+    private func finishOpticalProbe() {
+        guard let lines = opticalProbeLines else { return }
+        opticalProbeLines = nil
+        let name = "optical-probe-\(Int(Date().timeIntervalSince1970)).txt"
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let url = docs.appendingPathComponent(name)
+        do {
+            try (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+            state.opticalProbeStatus = "Done. \(lines.count) notifications saved."
+            log("Optical probe: \(lines.count) notifications saved to Documents/\(name)")
+        } catch {
+            state.opticalProbeStatus = "Could not save the capture."
+            log("Optical probe: save failed (\(error.localizedDescription))")
+        }
+    }
+
     /// Start a manually stopped 5/MG raw-data session. Returns false when another capture is active.
     @discardableResult
     public func startGroundTruthRawCapture(sessionId: String) -> Bool {
@@ -7555,6 +7619,7 @@ extension BLEManager: @preconcurrency CBPeripheralDelegate {
         // frame including ones no branch consumes - the epitaph must answer "did anything arrive at all".
         inboundFrames += 1
         inboundBytes += bytes.count
+        if opticalProbeLines != nil { recordOpticalProbe(characteristic.uuid.uuidString, bytes) }
         if characteristic.uuid == BLEManager.cmdNotifyChar { cmdChannelFrames += 1 }
 
         switch characteristic.uuid {
