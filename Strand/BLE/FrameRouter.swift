@@ -16,6 +16,9 @@ public final class FrameRouter {
     var onStrapSerial: ((String) -> Void)?
 
     var onSyncTrigger: (() -> Void)?
+    /// #2893 (personal fork): a WHOOP 4.0 readback from the SAME strap reports a different alarm than the one
+    /// just armed. Carries the epoch that was sent. BLEManager clears the stored alarm and arms once more.
+    var onAlarmMismatch: ((Int) -> Void)?
     /// #1706: which strap this connection is talking to, so an alarm readback can be attributed to a
     /// device. Set per connection by BLEManager immediately AFTER `family`, whose didSet clears this —
     /// a path that sets the family and forgets the id then attributes nothing rather than carrying the
@@ -273,6 +276,7 @@ public final class FrameRouter {
                                 reportedAt: Date().timeIntervalSince1970)
                             if AlarmReadback.countsAsRejection(verdict) {
                                 d.set(d.integer(forKey: "alarm.rejectStreak") + 1, forKey: "alarm.rejectStreak")
+                                if verdict == .mismatch { onAlarmMismatch?(sent) }
                             } else if AlarmReadback.clearsRejectionStreak(verdict) {
                                 d.set(0, forKey: "alarm.rejectStreak")
                             } else if verdict == .staleReadback {

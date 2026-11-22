@@ -1427,6 +1427,7 @@ public final class BLEManager: NSObject, ObservableObject {
         // Strap-as-clock: an incoming EVENT packet kicks a rate-limited catch-up sync.
         router.onSyncTrigger = { [weak self] in self?.requestSync(.strap) }
         router.onStrapSerial = { [weak self] serial in self?.noteHarvardSerial(serial) }   // #1193
+        router.onAlarmMismatch = { [weak self] sent in self?.rearmAfterStaleAlarm(sentEpoch: sent) }   // #2893
         // #78 hole-4: a paused-for-bond-loop strap gets one bounded salvage attempt per app-foreground.
         installForegroundSalvageProbe()
     }
@@ -1662,6 +1663,7 @@ public final class BLEManager: NSObject, ObservableObject {
         // Strap-as-clock: an incoming EVENT packet kicks a rate-limited catch-up sync.
         router.onSyncTrigger = { [weak self] in self?.requestSync(.strap) }
         router.onStrapSerial = { [weak self] serial in self?.noteHarvardSerial(serial) }   // #1193
+        router.onAlarmMismatch = { [weak self] sent in self?.rearmAfterStaleAlarm(sentEpoch: sent) }   // #2893
         // #78 hole-4: a paused-for-bond-loop strap gets one bounded salvage attempt per app-foreground.
         installForegroundSalvageProbe()
     }
@@ -5652,6 +5654,30 @@ public final class BLEManager: NSObject, ObservableObject {
         // evening one) can be compared against the resting HR of the successful arms already on file. `nil`
         // (no key written) means no HR had streamed yet at arm time, not zero.
         d.set(state.heartRate, forKey: "alarm.lastArmHeartRate")
+    }
+
+    /// The sent epoch the #2893 recovery already ran for, so one arm is retried at most once.
+    private var staleAlarmRetriedEpoch: Int?
+
+    /// #2893 (personal fork): a WHOOP 4.0 that already holds an alarm keeps it when sent a new
+    /// SET_ALARM_TIME. The readback then reports the OLD time and the new one never fires (reported on
+    /// firmware 41.16-41.17, iOS). The same report showed a new time taking only once the slot was empty, so
+    /// on a proven same-strap mismatch this sends DISABLE_ALARM, waits a second, sends the same arm again and
+    /// reads it back. Both commands are ones the alarm path already sends, both are reversible, and it runs
+    /// once per armed epoch: a second mismatch is left to the reject streak and its warning.
+    private func rearmAfterStaleAlarm(sentEpoch: Int) {
+        guard selectedModel.deviceFamily != .whoop5, commandChannelReady,
+              staleAlarmRetriedEpoch != sentEpoch else { return }
+        staleAlarmRetriedEpoch = sentEpoch
+        log("Alarm: strap still holds an earlier alarm; clearing it and arming again (#2893)")
+        send(.disableAlarm, payload: [0x01])
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard let self, self.commandChannelReady else { return }
+            self.send(.setAlarmTime, payload: WhoopCommand.setAlarmPayload(epochSec: UInt32(clamping: sentEpoch)))
+            self.recordAlarmArm(sentEpoch: sentEpoch)
+            self.send(.getAlarmTime, payload: [0x01])
+        }
     }
 
     /// Disarm the currently-armed firmware alarm.
