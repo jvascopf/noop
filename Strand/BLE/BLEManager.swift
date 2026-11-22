@@ -2353,16 +2353,54 @@ public final class BLEManager: NSObject, ObservableObject {
         return true
     }
 
+    /// Second feasibility capture (personal fork): the R10/R11 realtime stream (command 63, the same switch
+    /// the Live screen flips) for about three minutes, in guided phases, so the two optical channels can be
+    /// told apart: strap snug, strap loose, strap off the wrist in the air. Every notification is tagged with
+    /// its phase and saved to Documents/optical-probe2-<epoch>.txt. Sends 63 [01] after a 5 s baseline and
+    /// 63 [00] at the end, exactly as leaving the Live screen does. User-initiated and confirmation-gated.
+    @discardableResult
+    public func runGuidedOpticalProbe() -> Bool {
+        guard selectedModel.deviceFamily == .whoop4, commandChannelReady,
+              opticalProbeLines == nil, !rawCaptureInFlight else {
+            log("Optical probe 2: not started (needs a connected WHOOP 4.0 and no capture running)")
+            return false
+        }
+        let phases: [(tag: String, seconds: Int, prompt: String)] = [
+            ("baseline", 5, "Keep still, strap snug."),
+            ("tight", 90, "Strap SNUG on the wrist. Keep the arm still."),
+            ("loose", 60, "LOOSEN the strap so it sits loosely. Keep still."),
+            ("air", 30, "Take the strap OFF and hold it in the air, sensor facing down."),
+            ("after", 5, "Stopping…"),
+        ]
+        opticalProbeLines = []
+        log("Optical probe 2: started")
+        Task { @MainActor [weak self] in
+            for (index, phase) in phases.enumerated() {
+                guard let self, self.opticalProbeLines != nil else { return }
+                self.opticalProbePhase = phase.tag
+                if phase.tag == "tight" { self.send(.sendR10R11Realtime, payload: [0x01]) }
+                if phase.tag == "after" { self.send(.sendR10R11Realtime, payload: [0x00]) }
+                self.log("Optical probe 2: phase \(phase.tag)")
+                for left in stride(from: phase.seconds, to: 0, by: -1) {
+                    self.state.opticalProbeStatus = "Step \(index + 1)/\(phases.count): \(phase.prompt) \(left) s"
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                }
+            }
+            self?.finishOpticalProbe(prefix: "optical-probe2")
+        }
+        return true
+    }
+
     private func recordOpticalProbe(_ uuid: String, _ bytes: [UInt8]) {
         let ms = Int64(Date().timeIntervalSince1970 * 1_000)
         let hex = bytes.map { String(format: "%02x", $0) }.joined()
         opticalProbeLines?.append("\(ms) \(opticalProbePhase) \(uuid) \(hex)")
     }
 
-    private func finishOpticalProbe() {
+    private func finishOpticalProbe(prefix: String = "optical-probe") {
         guard let lines = opticalProbeLines else { return }
         opticalProbeLines = nil
-        let name = "optical-probe-\(Int(Date().timeIntervalSince1970)).txt"
+        let name = "\(prefix)-\(Int(Date().timeIntervalSince1970)).txt"
         guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         let url = docs.appendingPathComponent(name)
         do {

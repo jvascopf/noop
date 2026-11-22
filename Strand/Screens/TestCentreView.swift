@@ -228,6 +228,7 @@ struct TestCentreView: View {
     /// Personal fork: the WHOOP 4.0 SpO₂ feasibility probe (`BLEManager.runOpticalProbe`). A temporary
     /// research tool, so its copy is verbatim English rather than catalogue strings.
     @State private var confirmOpticalProbe = false
+    @State private var confirmGuidedOpticalProbe = false
     private var opticalProbeCard: some View {
         NoopCard {
             VStack(alignment: .leading, spacing: NoopMetrics.space3) {
@@ -242,6 +243,11 @@ struct TestCentreView: View {
                 }
                 .buttonStyle(NoopButtonStyle(.primary, fullWidth: true))
                 .disabled(!live.connected)
+                Button { confirmGuidedOpticalProbe = true } label: {
+                    Label { Text(verbatim: "Run guided realtime probe (3 min)") } icon: { Image(systemName: "hand.raised") }
+                }
+                .buttonStyle(NoopButtonStyle(.secondary, fullWidth: true))
+                .disabled(!live.connected)
                 if let status = live.opticalProbeStatus {
                     Text(verbatim: status).font(StrandFont.caption).foregroundStyle(StrandPalette.textSecondary)
                 }
@@ -252,6 +258,12 @@ struct TestCentreView: View {
             Button { model.ble.runOpticalProbe() } label: { Text(verbatim: "Start") }
         } message: {
             Text(verbatim: "Sends START_RAW_DATA to the strap for 60 s and STOP_RAW_DATA afterwards. Both are the commands the raw capture already uses.")
+        }
+        .confirmationDialog(Text(verbatim: "Run the guided realtime probe?"), isPresented: $confirmGuidedOpticalProbe,
+                            titleVisibility: .visible) {
+            Button { model.ble.runGuidedOpticalProbe() } label: { Text(verbatim: "Start") }
+        } message: {
+            Text(verbatim: "Turns the R10/R11 realtime stream on for about three minutes (the switch the Live screen uses), then off. Follow the steps on screen: strap snug, then loose, then off the wrist in the air.")
         }
     }
 

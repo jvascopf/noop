@@ -219859,6 +219859,9 @@
         "Run optical probe (85 s)": {"shouldTranslate": false},
         "Run the optical probe?": {"shouldTranslate": false},
         "Sends START_RAW_DATA to the strap for 60 s and STOP_RAW_DATA afterwards. Both are the commands the raw capture already uses.": {"shouldTranslate": false},
+        "Run guided realtime probe (3 min)": {"shouldTranslate": false},
+        "Run the guided realtime probe?": {"shouldTranslate": false},
+        "Turns the R10/R11 realtime stream on for about three minutes (the switch the Live screen uses), then off. Follow the steps on screen: strap snug, then loose, then off the wrist in the air.": {"shouldTranslate": false},
         "Oura": {"shouldTranslate": false}
   },
   "version": "1.0"
