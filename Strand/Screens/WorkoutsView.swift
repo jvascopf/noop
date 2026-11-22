@@ -260,7 +260,10 @@ struct WorkoutsView: View {
             await loadRecoveryTrend(rows: trendRows)
         }
         .sheet(item: $sheet) { target in
-            ManualWorkoutSheet(editing: target.editing) { row, replacing in
+            ManualWorkoutSheet(editing: target.editing,
+                               estimateKcal: { [intelligence] start, end in
+                                   await intelligence.estimateManualWorkoutKcal(start: start, end: end)
+                               }) { row, replacing in
                 Task {
                     // A copy pre-fills the form but replaces nothing — see `WorkoutSheetTarget.isCopy`.
                     await repo.saveManualWorkout(row, replacing: target.isCopy ? nil : replacing)

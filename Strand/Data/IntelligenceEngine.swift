@@ -3374,6 +3374,24 @@ final class IntelligenceEngine: ObservableObject {
         } catch { /* Keep the old fingerprints so a failed write can be retried. */ }
     }
 
+    /// Calories for a manual workout's [start, end) from the strap HR stored for it (#2830, personal fork):
+    /// the same `ManualWorkoutRescore.scored` the post-save rescore runs, against the newest measured resting
+    /// HR, so the figure the form pre-fills is the one the rescore would write. nil with too little HR.
+    func estimateManualWorkoutKcal(start: Int, end: Int) async -> Double? {
+        guard end > start else { return nil }
+        let samples = await repo.hrSamples(from: start, to: end, limit: 200_000)
+        let up = UserProfile(weightKg: profile.weightKg, heightCm: profile.heightCm,
+                             age: Double(profile.age), sex: profile.sex,
+                             stepTicksPerStep: profile.stepTicksPerStep)
+        let hrMax = Double(profile.hrMax)
+        let resting = results.first(where: { $0.rhr != nil })?.rhr.map(Double.init)
+        let method = PuffinExperiment.effortMethod
+        return await Task.detached(priority: .userInitiated) {
+            ManualWorkoutRescore.scored(windowSamples: samples, profile: up, hrMax: hrMax,
+                                        restingHR: resting, effortMethod: method)?.kcal
+        }.value
+    }
+
     /// Pass 1 has no seeded skin baseline. Attach the deviation before scoring so the score,
     /// explanation, trace and persisted row all consume the same temperature. Internal for regression tests.
     static func recomputeRecoveryDaily(_ daily: DailyMetric, nightlySkinTempC: Double?,

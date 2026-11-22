@@ -27,7 +27,14 @@ struct ManualWorkoutSheet: View {
     /// Called with the validated row (and the original, when editing) once the user taps Save.
     let onSave: (_ row: WorkoutRow, _ replacing: WorkoutRow?) -> Void
 
+    /// #2830 (personal fork): estimates calories for a [start, end) window from the strap HR already stored
+    /// for it, the same scoring the post-save rescore applies. nil (previews, tests) leaves the field manual.
+    var estimateKcal: ((_ start: Int, _ end: Int) async -> Double?)? = nil
+
     @Environment(\.dismiss) private var dismiss
+    /// The calories text this sheet filled in itself, so a later change of the span can update it while a
+    /// value the wearer typed is never overwritten.
+    @State private var kcalAutoText: String?
 
     @State private var sport: String
     @State private var start: Date
@@ -65,8 +72,10 @@ struct ManualWorkoutSheet: View {
     @State private var suggestionsHeight: CGFloat = 0
 
     init(editing: WorkoutRow? = nil,
+         estimateKcal: ((_ start: Int, _ end: Int) async -> Double?)? = nil,
          onSave: @escaping (_ row: WorkoutRow, _ replacing: WorkoutRow?) -> Void) {
         self.editing = editing
+        self.estimateKcal = estimateKcal
         self.onSave = onSave
         // Pre-fill from the edited row (display "detected" as "Activity" so a re-label starts clean).
         let e = editing
@@ -194,9 +203,18 @@ struct ManualWorkoutSheet: View {
                     }
                 }
             }
+            if kcalAutoText != nil, kcalText == kcalAutoText {
+                Text("Calories estimated from your heart rate in this window. Edit to override.")
+                    .font(StrandFont.footnote)
+                    .foregroundStyle(StrandPalette.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if let validationNote { noteRow(validationNote) }
             if avgHrEditedNote { noteRow(String(localized: "Avg HR is shown as typed. The HR graph, zones and Effort stay from the recorded session.")) }
             footer
+        }
+        .task(id: "\(Int(start.timeIntervalSince1970))-\(Int(end.timeIntervalSince1970))") {
+            await refreshKcalEstimate()
         }
     }
 
@@ -490,6 +508,28 @@ struct ManualWorkoutSheet: View {
                 : String(localized: "Distance must be 0–1,000 km.")
         }
         return String(localized: "Check the values and try again.")
+    }
+
+    /// Fill Calories from the window's stored HR when the field is empty or still holds this sheet's own
+    /// estimate. Debounced so dragging a time picker does not read the store on every step.
+    private func refreshKcalEstimate() async {
+        guard let estimateKcal, end > start else { return }
+        let typed = kcalText.trimmingCharacters(in: .whitespaces)
+        guard typed.isEmpty || typed == kcalAutoText else { return }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        guard !Task.isCancelled else { return }
+        let kcal = await estimateKcal(Int(start.timeIntervalSince1970), Int(end.timeIntervalSince1970))
+        guard !Task.isCancelled else { return }
+        let current = kcalText.trimmingCharacters(in: .whitespaces)
+        guard current.isEmpty || current == kcalAutoText else { return }
+        if let kcal, kcal > 0 {
+            let text = String(Int(kcal.rounded()))
+            kcalText = text
+            kcalAutoText = text
+        } else if current == kcalAutoText {
+            kcalText = ""
+            kcalAutoText = nil
+        }
     }
 
     private func save() {
