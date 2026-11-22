@@ -287,6 +287,27 @@ enum LiquidRender {
 
 // MARK: - Views
 
+/// Tracks whether a live liquid surface is inside its scroll view's viewport, so it can draw one still frame
+/// while scrolled out of sight (personal fork, after Iskrata/noop 6f70b8e3).
+///
+/// A `TimelineView(.animation)` keeps ticking after its view scrolls out of the viewport. Today's heart-rate
+/// thread runs at 60 fps whenever the strap streams, so it kept costing main-thread time with the whole
+/// column scrolled past it (that fork measured ~47% of a core down to ~1% on the Mac harness). The caller
+/// swaps in its static frame rather than pausing the timeline: a paused timeline made the render server
+/// busier, not quieter (measured on the sky, `LiquidSky`). `onScrollVisibilityChange` needs iOS 18 /
+/// macOS 15; below that the surface animates as before.
+struct LiquidOnScreen: ViewModifier {
+    @Binding var onScreen: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content.onScrollVisibilityChange(threshold: 0.01) { onScreen = $0 }
+        } else {
+            content
+        }
+    }
+}
+
 /// Applies the splash tap either as a normal tap (consuming it) or as a simultaneous gesture (sharing
 /// it with whatever wraps the view).
 ///
@@ -422,9 +443,13 @@ struct LiquidTube: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var motion = NoopMotionState.shared
     @State private var sim = LiquidSim(target: 0)
+    @State private var onScreen = true
 
     var body: some View {
-        if animated && !motion.poseStill(reduceMotion) { liveTube } else { staticTube }
+        Group {
+            if animated && onScreen && !motion.poseStill(reduceMotion) { liveTube } else { staticTube }
+        }
+        .modifier(LiquidOnScreen(onScreen: $onScreen))
     }
 
     private var liveTube: some View {
@@ -465,15 +490,20 @@ struct LiquidThread: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var motion = NoopMotionState.shared
+    @State private var onScreen = true
 
     var body: some View {
-        if animated && !motion.poseStill(reduceMotion) { liveThread } else { staticThread }
+        Group {
+            if animated && onScreen && !motion.poseStill(reduceMotion) { liveThread } else { staticThread }
+        }
+        .modifier(LiquidOnScreen(onScreen: $onScreen))
     }
 
     private var liveThread: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { tl in   // 60fps to flow smoothly on ProMotion
             let now = liquidSeconds(tl.date)
-            Canvas { context, size in
+            // Pure over its captured values, so it renders off the main thread (after Iskrata/noop 8e86122f).
+            Canvas(rendersAsynchronously: true) { context, size in
                 LiquidRender.thread(context, size, values: bpm, now: now, tint: tint, segments: segments)
             }
         }

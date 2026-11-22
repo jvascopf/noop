@@ -16,7 +16,20 @@ public enum DayKey {
     }()
 
     /// The key at UTC midnight, or nil when it is not a "yyyy-MM-dd" day.
-    public static func date(_ key: String) -> Date? { parser.date(from: key) }
+    ///
+    /// Memoized (personal fork, after Iskrata/noop 59b2c7de): a parse costs ~15 µs and Trends parses one key
+    /// per banked day per metric on every evaluation, ~33 ms per render on ALL over a year of history. Keys
+    /// are a small closed set, one per calendar day, so each is parsed once per process.
+    public static func date(_ key: String) -> Date? {
+        memoLock.lock()
+        defer { memoLock.unlock() }
+        if let hit = memo[key] { return hit }
+        let parsed = parser.date(from: key)
+        memo[key] = parsed
+        return parsed
+    }
+    private static let memoLock = NSLock()
+    private static var memo: [String: Date?] = [:]
 
     /// The key a `date(_:)` result came from.
     public static func key(_ date: Date) -> String { parser.string(from: date) }
