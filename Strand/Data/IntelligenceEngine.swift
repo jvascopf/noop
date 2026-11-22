@@ -750,8 +750,9 @@ final class IntelligenceEngine: ObservableObject {
             }
             if Task.isCancelled { break }
             // Score the recent window first, so a fresh night is on screen within seconds rather than after
-            // the several minutes the full history takes.
-            if !scoredRecentFirst {
+            // the several minutes the full history takes. Skipped when a pass has already completed in this
+            // process (a post-offload pass usually has), since a cold 21-day pass costs minutes on its own.
+            if !scoredRecentFirst && completedPasses == 0 {
                 scoredRecentFirst = true
                 await analyzeRecent(maxDays: 21, triggerLabel: "one-shot-recent-first")
                 continue
