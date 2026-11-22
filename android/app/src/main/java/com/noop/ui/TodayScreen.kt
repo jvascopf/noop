@@ -648,7 +648,7 @@ fun TodayScreen(
                 val from = now - 14L * 86_400
                 // #1304/#512: a 2nd active strap banks its SoC under "whoop-<uuid>", so a "my-whoop" read
                 // returned empty and the runtime estimate went blank. Read the active strap's own battery.
-                val samples = viewModel.repo.batterySamples(viewModel.activeStrapId, from, now, limit = 2_000)
+                val samples = viewModel.repo.batterySamples(viewModel.activeStrapId, from, now, limit = BatteryEstimator.seedLimit)
                     .mapNotNull { s -> s.soc?.let { s.ts to it } }
                 val rated = if (liveSnap.whoop5) BatteryEstimator.ratedLifeHoursWhoop5
                             else BatteryEstimator.ratedLifeHoursWhoop4

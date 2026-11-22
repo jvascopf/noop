@@ -55,6 +55,7 @@ final class BatteryEstimatorTraceTests: XCTestCase {
 
         XCTAssertEqual(lines, [
             "battery series=4 readings span 0..230400s",
+            "battery learnedLife=100.0h from finished discharges (rated 288.0h); own slope trusted after 12.0h",
             "battery read t=0s soc=100.0",
             "battery read t=216000s soc=40.0",
             "battery read t=219600s soc=55.0",
@@ -62,7 +63,7 @@ final class BatteryEstimatorTraceTests: XCTestCase {
             "battery partialTopUp at t=219600s +15.0pp (<nearFullPct 90.0) -> fit pre-top-up segment",
             "battery dischargeRun start=0s span=60.0h drop=60.0pp",
             "battery slope=1.0pct/h fitted from run endpoints",
-            "battery gate minSpanHours 2.0 PASS, minDropPct 2.0 PASS -> source=measured",
+            "battery gate minSpanHours 12.0 PASS, minDropPct 2.0 PASS -> source=measured",
         ])
         // No full-charge chargeStep line: the only rise here is a partial top-up.
         XCTAssertFalse(lines.contains { $0.hasPrefix("battery chargeStep") })

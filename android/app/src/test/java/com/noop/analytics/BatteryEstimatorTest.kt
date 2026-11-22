@@ -145,4 +145,45 @@ class BatteryEstimatorTest {
         assertEquals("~14h", BatteryEstimator.label(14.0))
         assertEquals("~4.5 days", BatteryEstimator.label(108.0))
     }
+
+    // Learned full-charge life and spikes (personal fork). Same fixtures and literals as the Swift twin.
+    private val twoFinishedDischarges =
+        listOf(0L to 98.0, 80 * h to 2.0, 81 * h to 99.0, 165 * h to 15.0, 166 * h to 97.0)
+
+    @Test fun learnedLifeIsTheLowerMedianOfFinishedDischarges() {
+        val life = BatteryEstimator.learnedFullChargeHours(twoFinishedDischarges + (170 * h to 93.0))!!
+        assertEquals(83.33333333333333, life, 1e-9)
+    }
+
+    @Test fun earlyInAChargeTheLearnedLifeBeatsAFewQuietHours() {
+        val e = BatteryEstimator.estimate(twoFinishedDischarges + (170 * h to 93.0),
+            BatteryEstimator.ratedLifeHoursWhoop4)!!
+        assertEquals(BatteryEstimator.Source.LEARNED, e.source)
+        assertEquals(77.5, e.remainingHours, 1e-9)
+    }
+
+    @Test fun afterTwelveHoursTheOwnSlopeTakesOver() {
+        val e = BatteryEstimator.estimate(twoFinishedDischarges + (186 * h to 73.0),
+            BatteryEstimator.ratedLifeHoursWhoop4)!!
+        assertEquals(BatteryEstimator.Source.MEASURED, e.source)
+        assertEquals(60.833333333333336, e.remainingHours, 1e-9)
+    }
+
+    @Test fun anIsolatedBadReadingIsDropped() {
+        val samples = listOf(0L to 100.0, 10 * h to 88.0, 10 * h + 600 to 40.0, 10 * h + 1200 to 87.9,
+            14 * h to 84.0)
+        val e = BatteryEstimator.estimate(samples, BatteryEstimator.ratedLifeHoursWhoop4)!!
+        assertEquals(BatteryEstimator.Source.MEASURED, e.source)
+        assertEquals(73.5, e.remainingHours, 1e-9)
+    }
+
+    @Test fun aDenseChargeIsSeenAsOneCharge() {
+        val samples = mutableListOf(0L to 99.5, 12 * h to 84.5, 24 * h to 69.5, 36 * h to 54.5, 48 * h to 39.5)
+        for (k in 1..109) samples.add(48 * h + 30L * k to 39.5 + 0.5 * k)
+        samples.add(68 * h + 3270 to 70.0)
+        val e = BatteryEstimator.estimate(samples, BatteryEstimator.ratedLifeHoursWhoop4)!!
+        assertEquals(BatteryEstimator.Source.MEASURED, e.source)
+        assertEquals(58.333333333333336, e.remainingHours, 1e-9)
+        assertEquals(80.0, BatteryEstimator.learnedFullChargeHours(BatteryEstimator.collapsedRises(samples))!!, 1e-9)
+    }
 }

@@ -1621,7 +1621,7 @@ public final class BLEManager: NSObject, ObservableObject {
         let seedNow = Int(Date().timeIntervalSince1970)
         let fourteenDays = 14 * 24 * 3600
         if let rows = try? await store.batterySamples(
-            deviceId: deviceId, from: seedNow - fourteenDays, to: seedNow, limit: 2000) {
+            deviceId: deviceId, from: seedNow - fourteenDays, to: seedNow, limit: BatteryEstimator.seedLimit) {
             let seed = rows.compactMap { row -> (ts: Int, soc: Double)? in
                 guard let soc = row.soc else { return nil }
                 return (ts: row.ts, soc: soc)

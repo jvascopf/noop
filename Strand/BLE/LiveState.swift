@@ -178,9 +178,10 @@ public final class LiveState: ObservableObject {
     /// the recent discharge slope over it. Capped + bounded so it can't grow without limit; cleared on
     /// disconnect so a stale estimate can't outlive the link.
     @Published public private(set) var batterySamples: [(ts: Int, soc: Double)] = []
-    /// Cap on the SoC buffer. Battery events arrive only every ~8 minutes, so a few hundred readings
-    /// already spans a couple of days, plenty to fit a discharge slope against.
-    static let maxBatterySamples = 400
+    /// Cap on the SoC buffer: the same row budget as the 14-day seed (personal fork). It was 400, which a
+    /// charge's 30-second readings ate in a few days, too short to hold the finished discharges the
+    /// estimator learns the strap's real full-charge life from.
+    static let maxBatterySamples = BatteryEstimator.seedLimit
 
     // MARK: - Sleep & Rest test-mode live readout (Group E)
 

@@ -42,8 +42,27 @@ object BatteryEstimator {
      *  a partial top-up is instead stepped over, and the fit prefers the longer pre-top-up discharge segment. */
     const val nearFullPct = 90.0
 
-    /** Where the drain rate came from: the user's own measured discharge, or the rated fallback. */
-    enum class Source { MEASURED, RATED }
+    /** A reading more than this far (pp) from BOTH neighbours, while the neighbours agree within it and lie
+     *  within [spikeWindowSec] of each other, is a single bad reading and is dropped (personal fork).
+     *  Swift twin: `BatteryEstimator.spikePct`. */
+    const val spikePct = 5.0
+    const val spikeWindowSec = 1800L
+
+    /** A finished discharge teaches the real full-charge life only when it started near full and ran this
+     *  deep and this long. Swift twin: `BatteryEstimator.learnMinDropPct`. */
+    const val learnMinDropPct = 40.0
+    const val learnMinSpanHours = 24.0
+    /** The most recent finished discharges used, so the figure follows the battery as it ages. */
+    const val learnMaxRuns = 5
+    /** Row budget for the 14-day SoC series a caller loads (personal fork): reads are oldest-first and a
+     *  charge banks a reading every 30 s, so the old 2000 stopped days short of now. Swift twin: `seedLimit`. */
+    const val seedLimit = 20_000
+    /** With a learned life, the current discharge's own slope is trusted only after this long. */
+    const val minSpanHoursWithHistory = 12.0
+
+    /** Where the drain rate came from: the user's own measured discharge, the full-charge life learned from
+     *  their finished discharges, or the rated fallback. */
+    enum class Source { MEASURED, LEARNED, RATED }
 
     data class Estimate(
         /** Estimated hours of runtime left at the latest reading. */
@@ -67,9 +86,13 @@ object BatteryEstimator {
      * Returns null only when there isn't a single reading to anchor to. Mirrors the Swift estimate().
      */
     fun estimate(samples: List<Pair<Long, Double>>, ratedHours: Double): Estimate? {
-        val sorted = samples.sortedBy { it.first }
+        val sorted = collapsedRises(despiked(samples.sortedBy { it.first }))
         val last = sorted.lastOrNull() ?: return null
         val current = last.second
+        // The strap's real full-charge life when finished discharges show it; the rated figure otherwise.
+        val learnedHours = learnedFullChargeHours(sorted)
+        val lifeHours = learnedHours ?: ratedHours
+        val minSpan = if (learnedHours != null) minSpanHoursWithHistory else minSpanHours
 
         // The discharge segment whose slope we fit: anchored at the most recent NEAR-FULL charge, and ending
         // before any later partial top-up, so neither a charge earlier in the buffer nor a quick desk top-up
@@ -86,19 +109,85 @@ object BatteryEstimator {
             val lastRun = dischargeRun.last()
             val spanHours = (lastRun.first - first.first) / 3600.0
             val drop = first.second - lastRun.second
-            if (spanHours < minSpanHours || drop < minDropPct) return@run null
+            if (spanHours < minSpan || drop < minDropPct) return@run null
             val rate = drop / spanHours
             if (rate > 0) rate else null
         }
 
-        val rate = measuredRate ?: (100.0 / maxOf(ratedHours, 1.0))
+        val rate = measuredRate ?: (100.0 / maxOf(lifeHours, 1.0))
         val remaining = maxOf(0.0, current) / rate
         // #99: cap scaled to the CURRENT SoC, not a flat multiple of the FULL rated life. The old
         // `ratedHours * 1.5` ignored SoC, so a too-slow measured slope at low charge (idle/off-wrist spans,
         // sparse 5/MG SoC readings) extrapolated 9% to ~3 days — more than a full 12-day MG charge. You can't
         // realistically stretch the rated per-% runtime past ~1.5x, so bound to that scaled to `current`%.
-        val clamped = minOf(remaining, ratedHours * 1.5 * (maxOf(0.0, current) / 100.0))
-        return Estimate(clamped, if (measuredRate != null) Source.MEASURED else Source.RATED, current)
+        val clamped = minOf(remaining, lifeHours * 1.5 * (maxOf(0.0, current) / 100.0))
+        val source = when {
+            measuredRate != null -> Source.MEASURED
+            learnedHours != null -> Source.LEARNED
+            else -> Source.RATED
+        }
+        return Estimate(clamped, source, current)
+    }
+
+    /** [sorted] without isolated spikes, compared against the ORIGINAL neighbours. Swift twin: `despiked`. */
+    internal fun despiked(sorted: List<Pair<Long, Double>>): List<Pair<Long, Double>> {
+        if (sorted.size < 3) return sorted
+        val out = ArrayList<Pair<Long, Double>>(sorted.size)
+        out.add(sorted[0])
+        for (i in 1 until sorted.size - 1) {
+            val prev = sorted[i - 1].second
+            val cur = sorted[i].second
+            val next = sorted[i + 1].second
+            val spike = sorted[i + 1].first - sorted[i - 1].first <= spikeWindowSec &&
+                kotlin.math.abs(cur - prev) > spikePct && kotlin.math.abs(cur - next) > spikePct &&
+                kotlin.math.abs(prev - next) <= spikePct
+            if (!spike) out.add(sorted[i])
+        }
+        out.add(sorted[sorted.size - 1])
+        return out
+    }
+
+    /** [sorted] with every run of non-decreasing readings reduced to its two ends, so a charge banked every
+     *  ~30 s reads as one step. Swift twin: `collapsedRises`, which carries the note. */
+    internal fun collapsedRises(sorted: List<Pair<Long, Double>>): List<Pair<Long, Double>> {
+        val out = ArrayList<Pair<Long, Double>>(sorted.size)
+        for (p in sorted) {
+            if (out.size >= 2 && p.second >= out[out.size - 1].second &&
+                out[out.size - 1].second >= out[out.size - 2].second) {
+                out[out.size - 1] = p
+            } else {
+                out.add(p)
+            }
+        }
+        return out
+    }
+
+    /**
+     * Full-charge life in hours learned from the FINISHED discharges in [sorted] (oldest→newest, despiked);
+     * the latest stretch is the discharge in progress and is left to the measured slope. Lower median of the
+     * last [learnMaxRuns]; null when none qualifies. Swift twin: `learnedFullChargeHours`.
+     */
+    fun learnedFullChargeHours(sorted: List<Pair<Long, Double>>): Double? {
+        if (sorted.size < 2) return null
+        val lives = ArrayList<Double>()
+        var start = 0
+        for (i in 1 until sorted.size) {
+            if (sorted[i].second <= sorted[i - 1].second + chargeStepPct) continue
+            val end = i - 1
+            if (end > start) {
+                val first = sorted[start]
+                val last = sorted[end]
+                val span = (last.first - first.first) / 3600.0
+                val drop = first.second - last.second
+                if (first.second >= nearFullPct && drop >= learnMinDropPct && span >= learnMinSpanHours) {
+                    lives.add(100.0 * span / drop)
+                }
+            }
+            start = i
+        }
+        val recent = lives.takeLast(learnMaxRuns).sorted()
+        if (recent.isEmpty()) return null
+        return recent[(recent.size - 1) / 2]
     }
 
     /**
@@ -174,15 +263,26 @@ object BatteryEstimator {
      */
     fun estimateTrace(samples: List<Pair<Long, Double>>, ratedHours: Double):
         Pair<Estimate?, List<String>> {
-        val sorted = samples.sortedBy { it.first }
-        val last = sorted.lastOrNull()
-        val first0 = sorted.firstOrNull()
+        val raw = samples.sortedBy { it.first }
+        val last = raw.lastOrNull()
+        val first0 = raw.firstOrNull()
         if (last == null || first0 == null) {
             return null to listOf("battery series=0 readings, no reading to anchor to")
         }
         val lines = mutableListOf<String>()
-        lines.add("battery series=${sorted.size} readings span ${first0.first}..${last.first}s")
-        for (s in sorted) lines.add("battery read t=${s.first}s soc=${soc(s.second)}")
+        lines.add("battery series=${raw.size} readings span ${first0.first}..${last.first}s")
+        // Everything below reads the same condensed series `estimate` does (spikes out, rises merged).
+        val sorted = collapsedRises(despiked(raw))
+        if (sorted.size < raw.size) {
+            lines.add("battery condensed to ${sorted.size} readings (spikes dropped, continuous rises merged)")
+        }
+        val learned = learnedFullChargeHours(sorted)
+        if (learned != null) {
+            lines.add("battery learnedLife=${hrs(learned)}h from finished discharges " +
+                "(rated ${hrs(ratedHours)}h); own slope trusted after ${hrs(minSpanHoursWithHistory)}h")
+        }
+        val minSpan = if (learned != null) minSpanHoursWithHistory else minSpanHours
+        for (s in raw) lines.add("battery read t=${s.first}s soc=${soc(s.second)}")
 
         // The most recent NEAR-FULL charge anchors the run start (same scan as estimate, #8); a partial
         // top-up does NOT anchor and is reported separately below.
@@ -221,7 +321,7 @@ object BatteryEstimator {
             val drop = runFirst.second - runLast.second
             lines.add("battery dischargeRun start=${runFirst.first}s " +
                 "span=${hrs(spanHours)}h drop=${soc(drop)}pp")
-            spanPass = spanHours >= minSpanHours
+            spanPass = spanHours >= minSpan
             dropPass = drop >= minDropPct
             if (spanPass && dropPass && drop / spanHours > 0) {
                 lines.add("battery slope=${slope(drop / spanHours)}pct/h fitted from run endpoints")
@@ -233,9 +333,10 @@ object BatteryEstimator {
         val measured = spanPass && dropPass && run.size >= 2 &&
             (run.first().second - run.last().second) /
             ((run.last().first - run.first().first) / 3600.0) > 0
-        lines.add("battery gate minSpanHours ${hrs(minSpanHours)} " +
+        val fallback = if (learned != null) "learned" else "rated"
+        lines.add("battery gate minSpanHours ${hrs(minSpan)} " +
             "${if (spanPass) "PASS" else "FAIL"}, minDropPct ${soc(minDropPct)} " +
-            "${if (dropPass) "PASS" else "FAIL"} -> source=${if (measured) "measured" else "rated"}")
+            "${if (dropPass) "PASS" else "FAIL"} -> source=${if (measured) "measured" else fallback}")
 
         return estimate(samples, ratedHours) to lines
     }

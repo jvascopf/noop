@@ -723,7 +723,7 @@ private fun TestCentreLiveReadoutPanel(
         val now = System.currentTimeMillis() / 1_000
         val from = now - 14L * 86_400
         val samples = runCatching {
-            vm.repo.batterySamples(activeStrapId, from, now, limit = 2_000)
+            vm.repo.batterySamples(activeStrapId, from, now, limit = BatteryEstimator.seedLimit)
                 .mapNotNull { sample -> sample.soc?.let { sample.ts to it } }
         }.getOrDefault(emptyList())
         val rated = if (is5MG) BatteryEstimator.ratedLifeHoursWhoop5

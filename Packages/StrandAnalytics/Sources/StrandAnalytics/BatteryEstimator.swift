@@ -40,8 +40,33 @@ public enum BatteryEstimator {
 
     // MARK: - Output
 
-    /// Where the drain rate came from: the user's own measured discharge, or the rated fallback.
-    public enum Source: String, Equatable, Sendable { case measured, rated }
+    // MARK: - Learned full-charge life (personal fork)
+
+    /// A reading more than this far (percentage points) from BOTH neighbours, while the neighbours agree
+    /// within it, is a single bad reading and is dropped before anything else. One 13.8% reading between
+    /// 58.8% and 58.5% otherwise read as a drain followed by a partial top-up and froze the fit window.
+    public static let spikePct: Double = 5.0
+    /// ...and only when its two neighbours are this close in time (s). A strap cannot charge or drain 5 pp
+    /// and come back inside half an hour, while a sparse series of genuine charges can look the same shape.
+    public static let spikeWindowSec = 1800
+
+    /// A finished discharge teaches the strap's real full-charge life only when it started near full and
+    /// ran long and deep enough for its endpoints rate to mean something.
+    public static let learnMinDropPct: Double = 40.0
+    public static let learnMinSpanHours: Double = 24.0
+    /// The most recent finished discharges used, so the figure follows the battery as it ages.
+    public static let learnMaxRuns = 5
+    /// Row budget for the 14-day SoC series a caller loads (personal fork). Reads are oldest-first, and a
+    /// charge banks a reading every 30 s, so the old 2000 stopped days short of now and the series ended in a
+    /// gap. Kotlin twin: `BatteryEstimator.seedLimit`.
+    public static let seedLimit = 20_000
+    /// With a learned life in hand, the current discharge's own slope is trusted only after this long. Early
+    /// in a charge the endpoints rate is a few quiet hours (often a night) and overstated the days left.
+    public static let minSpanHoursWithHistory: Double = 12.0
+
+    /// Where the drain rate came from: the user's own measured discharge, the full-charge life learned from
+    /// their finished discharges, or the rated fallback.
+    public enum Source: String, Equatable, Sendable { case measured, learned, rated }
 
     public struct Estimate: Equatable, Sendable {
         /// Estimated hours of runtime left at the latest reading.
@@ -73,9 +98,13 @@ public enum BatteryEstimator {
     ///     chosen by the caller from the connected strap's generation.
     /// - Returns: an estimate, or nil when there isn't a single reading to anchor to.
     public static func estimate(samples: [(ts: Int, soc: Double)], ratedHours: Double) -> Estimate? {
-        let sorted = samples.sorted { $0.ts < $1.ts }
+        let sorted = collapsedRises(despiked(samples.sorted { $0.ts < $1.ts }))
         guard let last = sorted.last else { return nil }
         let current = last.soc
+        // The strap's real full-charge life when finished discharges show it; the rated figure otherwise.
+        let learnedHours = learnedFullChargeHours(sorted)
+        let lifeHours = learnedHours ?? ratedHours
+        let minSpan = learnedHours != nil ? minSpanHoursWithHistory : minSpanHours
 
         // The discharge segment whose slope we fit: anchored at the most recent NEAR-FULL charge, and ending
         // before any later partial top-up, so neither a charge earlier in the buffer nor a quick desk top-up
@@ -90,21 +119,80 @@ public enum BatteryEstimator {
             guard run.count >= 2, let first = run.first, let lastRun = run.last else { return nil }
             let spanHours = Double(lastRun.ts - first.ts) / 3600.0
             let drop = first.soc - lastRun.soc
-            guard spanHours >= minSpanHours, drop >= minDropPct else { return nil }
+            guard spanHours >= minSpan, drop >= minDropPct else { return nil }
             let rate = drop / spanHours
             return rate > 0 ? rate : nil
         }()
 
-        let rate = measuredRate ?? (100.0 / max(ratedHours, 1))
+        let rate = measuredRate ?? (100.0 / max(lifeHours, 1))
         let remaining = max(0, current) / rate
         // #99: cap scaled to the CURRENT SoC, not a flat multiple of the FULL rated life. The old
         // `ratedHours * 1.5` ignored SoC, so a too-slow measured slope at low charge (idle/off-wrist spans,
         // sparse 5/MG SoC readings) extrapolated 9% to ~3 days — more than a full 12-day MG charge. You can't
         // realistically stretch the rated per-% runtime past ~1.5x, so bound to that scaled to `current`%.
-        let clamped = min(remaining, ratedHours * 1.5 * (max(0, current) / 100.0))
-        return Estimate(remainingHours: clamped,
-                        source: measuredRate != nil ? .measured : .rated,
-                        currentSoc: current)
+        let clamped = min(remaining, lifeHours * 1.5 * (max(0, current) / 100.0))
+        let source: Source = measuredRate != nil ? .measured : (learnedHours != nil ? .learned : .rated)
+        return Estimate(remainingHours: clamped, source: source, currentSoc: current)
+    }
+
+    /// `sorted` without isolated spikes: an interior reading more than `spikePct` from both neighbours while
+    /// the neighbours agree within `spikePct` and lie within `spikeWindowSec` of each other. Compared against the ORIGINAL neighbours, so two adjacent bad
+    /// readings are both kept (a real charge or drop takes many readings, never one). Kotlin twin: `despiked`.
+    static func despiked(_ sorted: [(ts: Int, soc: Double)]) -> [(ts: Int, soc: Double)] {
+        guard sorted.count >= 3 else { return sorted }
+        var out: [(ts: Int, soc: Double)] = [sorted[0]]
+        for i in 1..<(sorted.count - 1) {
+            let prev = sorted[i - 1].soc, cur = sorted[i].soc, next = sorted[i + 1].soc
+            let spike = sorted[i + 1].ts - sorted[i - 1].ts <= spikeWindowSec
+                && abs(cur - prev) > spikePct && abs(cur - next) > spikePct && abs(prev - next) <= spikePct
+            if !spike { out.append(sorted[i]) }
+        }
+        out.append(sorted[sorted.count - 1])
+        return out
+    }
+
+    /// `sorted` with every run of non-decreasing readings reduced to its two ends (personal fork). A charge
+    /// banks a reading every ~30 s, each 0.3-0.5 pp above the last, so no single step cleared `chargeStepPct`
+    /// and whole charges went unseen: the fit then spanned several cycles and pinned the estimate to its cap
+    /// (~5 days at 73% on a 4.0 that lasts ~3.5). Collapsed, a charge is one step from its bottom to its top.
+    /// Sparse series are unchanged. Kotlin twin: `collapsedRises`.
+    static func collapsedRises(_ sorted: [(ts: Int, soc: Double)]) -> [(ts: Int, soc: Double)] {
+        var out: [(ts: Int, soc: Double)] = []
+        out.reserveCapacity(sorted.count)
+        for p in sorted {
+            if out.count >= 2, p.soc >= out[out.count - 1].soc, out[out.count - 1].soc >= out[out.count - 2].soc {
+                out[out.count - 1] = p
+            } else {
+                out.append(p)
+            }
+        }
+        return out
+    }
+
+    /// Full-charge life in hours learned from the FINISHED discharges in `sorted` (oldest→newest, already
+    /// despiked): each stretch between two charge steps that started at >= `nearFullPct`, dropped
+    /// >= `learnMinDropPct` and lasted >= `learnMinSpanHours` gives `100 / rate`. The latest stretch is the
+    /// discharge in progress and is left to the measured slope. Lower median of the last `learnMaxRuns`;
+    /// nil when none qualifies. Kotlin twin: `learnedFullChargeHours`.
+    public static func learnedFullChargeHours(_ sorted: [(ts: Int, soc: Double)]) -> Double? {
+        guard sorted.count >= 2 else { return nil }
+        var lives: [Double] = []
+        var start = 0
+        for i in 1..<sorted.count where sorted[i].soc > sorted[i - 1].soc + chargeStepPct {
+            let end = i - 1
+            if end > start {
+                let first = sorted[start], last = sorted[end]
+                let span = Double(last.ts - first.ts) / 3600.0
+                let drop = first.soc - last.soc
+                if first.soc >= nearFullPct, drop >= learnMinDropPct, span >= learnMinSpanHours {
+                    lives.append(100.0 * span / drop)
+                }
+            }
+            start = i
+        }
+        let recent = lives.suffix(learnMaxRuns).sorted()
+        guard !recent.isEmpty else { return nil }
+        return recent[(recent.count - 1) / 2]
     }
 
     /// The slice of the sorted SoC series whose endpoints we fit the discharge slope on (#8). Two rules,
@@ -176,13 +264,24 @@ public enum BatteryEstimator {
     /// cost. Pure: no clock, no I/O, so fixtures stay exact. The Kotlin twin is BatteryEstimator.estimateTrace.
     public static func estimateTrace(samples: [(ts: Int, soc: Double)], ratedHours: Double)
         -> (estimate: Estimate?, trace: [String]) {
-        let sorted = samples.sorted { $0.ts < $1.ts }
-        guard let last = sorted.last, let first0 = sorted.first else {
+        let raw = samples.sorted { $0.ts < $1.ts }
+        guard let last = raw.last, let first0 = raw.first else {
             return (nil, ["battery series=0 readings, no reading to anchor to"])
         }
         var lines: [String] = []
-        lines.append("battery series=\(sorted.count) readings span \(first0.ts)..\(last.ts)s")
-        for s in sorted { lines.append("battery read t=\(s.ts)s soc=\(socText(s.soc))") }
+        lines.append("battery series=\(raw.count) readings span \(first0.ts)..\(last.ts)s")
+        // Everything below reads the same condensed series `estimate` does (spikes out, rises merged).
+        let sorted = collapsedRises(despiked(raw))
+        if sorted.count < raw.count {
+            lines.append("battery condensed to \(sorted.count) readings (spikes dropped, continuous rises merged)")
+        }
+        let learned = learnedFullChargeHours(sorted)
+        if let learned {
+            lines.append("battery learnedLife=\(hoursText(learned))h from finished discharges "
+                + "(rated \(hoursText(ratedHours))h); own slope trusted after \(hoursText(minSpanHoursWithHistory))h")
+        }
+        let minSpan = learned != nil ? minSpanHoursWithHistory : minSpanHours
+        for s in raw { lines.append("battery read t=\(s.ts)s soc=\(socText(s.soc))") }
 
         // The most recent NEAR-FULL charge anchors the run start (same scan as estimate, #8); a partial
         // top-up does NOT anchor and is reported separately below.
@@ -217,7 +316,7 @@ public enum BatteryEstimator {
             let drop = runFirst.soc - runLast.soc
             lines.append("battery dischargeRun start=\(runFirst.ts)s "
                 + "span=\(hoursText(spanHours))h drop=\(socText(drop))pp")
-            spanPass = spanHours >= minSpanHours
+            spanPass = spanHours >= minSpan
             dropPass = drop >= minDropPct
             if spanPass && dropPass && drop / spanHours > 0 {
                 lines.append("battery slope=\(slopeText(drop / spanHours))pct/h fitted from run endpoints")
@@ -228,9 +327,10 @@ public enum BatteryEstimator {
 
         let measured = spanPass && dropPass && run.count >= 2
             && (run.first!.soc - run.last!.soc) / (Double(run.last!.ts - run.first!.ts) / 3600.0) > 0
-        lines.append("battery gate minSpanHours \(hoursText(minSpanHours)) "
+        let fallback = learned != nil ? "learned" : "rated"
+        lines.append("battery gate minSpanHours \(hoursText(minSpan)) "
             + "\(spanPass ? "PASS" : "FAIL"), minDropPct \(socText(minDropPct)) "
-            + "\(dropPass ? "PASS" : "FAIL") -> source=\(measured ? "measured" : "rated")")
+            + "\(dropPass ? "PASS" : "FAIL") -> source=\(measured ? "measured" : fallback)")
 
         return (estimate(samples: samples, ratedHours: ratedHours), lines)
     }

@@ -432,7 +432,7 @@ class WhoopConnectionService : Service() {
                         val nowS = System.currentTimeMillis() / 1000
                         // #1304/#512: read the active strap's own SoC (banked under "whoop-<uuid>" for a
                         // 2nd strap), not the hardcoded canonical id. Same accessor as :606.
-                        val samples = repo.batterySamples((application as NoopApplication).activeDeviceId, nowS - 14L * 86_400, nowS, limit = 2_000)
+                        val samples = repo.batterySamples((application as NoopApplication).activeDeviceId, nowS - 14L * 86_400, nowS, limit = com.noop.analytics.BatteryEstimator.seedLimit)
                             .mapNotNull { s -> s.soc?.let { s.ts to it } }
                         val rated = if (state.whoop5Detected) BatteryEstimator.ratedLifeHoursWhoop5
                                     else BatteryEstimator.ratedLifeHoursWhoop4

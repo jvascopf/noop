@@ -140,4 +140,54 @@ final class BatteryEstimatorTests: XCTestCase {
         XCTAssertEqual(BatteryEstimator.label(hours: 14), "~14h")
         XCTAssertEqual(BatteryEstimator.label(hours: 108), "~4.5 days")
     }
+
+    // MARK: - Learned full-charge life and spikes (personal fork)
+
+    /// Two finished discharges (98->2 over 80h = 83.33h per full charge, 99->15 over 84h = 100h), then a new
+    /// charge to 97 and 4h of discharge. The kotlin twin asserts the same literals.
+    private var twoFinishedDischarges: [(ts: Int, soc: Double)] {
+        [(0, 98), (80 * h, 2), (81 * h, 99), (165 * h, 15), (166 * h, 97)]
+    }
+
+    func testLearnedLifeIsTheLowerMedianOfFinishedDischarges() {
+        let life = BatteryEstimator.learnedFullChargeHours(twoFinishedDischarges + [(170 * h, 93)])!
+        XCTAssertEqual(life, 83.33333333333333, accuracy: 1e-9)
+    }
+
+    func testEarlyInAChargeTheLearnedLifeBeatsAFewQuietHours() {
+        // 97->93 over 4h is 1 %/h and would read 93h; the strap's finished charges say 1.2 %/h.
+        let e = BatteryEstimator.estimate(samples: twoFinishedDischarges + [(170 * h, 93)],
+                                          ratedHours: BatteryEstimator.ratedLifeHoursWhoop4)!
+        XCTAssertEqual(e.source, .learned)
+        XCTAssertEqual(e.remainingHours, 77.5, accuracy: 1e-9)   // 93 / (100 / 83.33)
+    }
+
+    func testAfterTwelveHoursTheOwnSlopeTakesOver() {
+        let e = BatteryEstimator.estimate(samples: twoFinishedDischarges + [(186 * h, 73)],
+                                          ratedHours: BatteryEstimator.ratedLifeHoursWhoop4)!
+        XCTAssertEqual(e.source, .measured)
+        XCTAssertEqual(e.remainingHours, 60.833333333333336, accuracy: 1e-9)   // 24pp / 20h = 1.2 %/h
+    }
+
+    func testAnIsolatedBadReadingIsDropped() {
+        // A single 40% between 88% and 87.9% ten minutes apart once read as a drain plus a partial top-up.
+        let samples: [(ts: Int, soc: Double)] = [(0, 100), (10 * h, 88), (10 * h + 600, 40), (10 * h + 1200, 87.9),
+                                                 (14 * h, 84)]
+        let e = BatteryEstimator.estimate(samples: samples, ratedHours: BatteryEstimator.ratedLifeHoursWhoop4)!
+        XCTAssertEqual(e.source, .measured)
+        XCTAssertEqual(e.remainingHours, 73.5, accuracy: 1e-9)   // 16pp / 14h; 84 / (8/7)
+    }
+
+    func testADenseChargeIsSeenAsOneCharge() {
+        // A charge banks a reading every 30 s, 0.5 pp apart, so no single step clears chargeStepPct. Before the
+        // rises were merged, the fit anchored on the older 99.5% peak and capped at 113.4h; the real slope since
+        // the 94% top is 24pp / 20h.
+        var samples: [(ts: Int, soc: Double)] = [(0, 99.5), (12 * h, 84.5), (24 * h, 69.5), (36 * h, 54.5), (48 * h, 39.5)]
+        for k in 1...109 { samples.append((48 * h + 30 * k, 39.5 + 0.5 * Double(k))) }
+        samples.append((68 * h + 3270, 70))
+        let e = BatteryEstimator.estimate(samples: samples, ratedHours: BatteryEstimator.ratedLifeHoursWhoop4)!
+        XCTAssertEqual(e.source, .measured)
+        XCTAssertEqual(e.remainingHours, 58.333333333333336, accuracy: 1e-9)
+        XCTAssertEqual(BatteryEstimator.learnedFullChargeHours(BatteryEstimator.collapsedRises(samples))!, 80, accuracy: 1e-9)
+    }
 }
