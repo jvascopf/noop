@@ -89,7 +89,7 @@ struct TodayCustomizationSheet: View {
         )
         let metrics = EditableLayoutDraft(
             visible: KeyMetricPrefs.decodeEnabled(keyMetricsRaw.wrappedValue),
-            allItems: KeyMetric.defaultOrder
+            allItems: KeyMetric.allCases
         )
         let cards = EditableLayoutDraft(
             visible: DashboardCardPrefs.decodeEnabled(dashboardCardsRaw.wrappedValue),
@@ -203,7 +203,7 @@ struct TodayCustomizationSheet: View {
         case .keyMetrics:
             keyMetricDraft = EditableLayoutDraft(
                 visible: KeyMetric.defaultOrder,
-                allItems: KeyMetric.defaultOrder
+                allItems: KeyMetric.allCases
             )
             detailed = false
             windowDays = 14
