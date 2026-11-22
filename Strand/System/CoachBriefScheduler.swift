@@ -33,6 +33,7 @@ enum CoachBriefScheduler {
         static let enabled = "coachBrief.enabled"          // master enable; default OFF
         static let time = "coachBrief.timeMinutes"         // minutes since local midnight; default 07:00
         static let lastRun = "coachBrief.lastRunDayKey"    // yyyy-MM-dd of the last GENERATED brief (dedup)
+        static let lastFailureNotice = "coachBrief.lastFailureNoticeDayKey" // yyyy-MM-dd of the last failure notice
         static let storedBrief = "coachBrief.storedText"   // the full brief, for the notification tap-through
         static let hasUnconsumed = "coachBrief.hasUnconsumedBrief"
         // K10: the brief text mirrored into the App Group so the widget extension (separate process)
@@ -104,6 +105,18 @@ enum CoachBriefScheduler {
     static var timeMinutes: Int {
         let v = UserDefaults.standard.object(forKey: K.time) as? Int ?? defaultTimeMinutes
         return min(max(v, 0), minutesPerDay - 1)
+    }
+
+    /// How long past the chosen time the brief waits for last night to be scored before it goes out anyway
+    /// (personal fork). A brief written before the strap has synced has no night to talk about.
+    static let nightWaitMinutes = 4 * 60
+
+    /// Answers whether last night has been scored; set by `AppModel`. nil (tests, no engine) reads as ready.
+    static var nightIsReady: (@MainActor () -> Bool)?
+
+    /// Pure: hold the brief while the night is not scored, until `nightWaitMinutes` past the chosen time.
+    static func shouldWaitForNight(nowMinutes: Int, scheduledMinutes: Int, nightReady: Bool) -> Bool {
+        !nightReady && nowMinutes < scheduledMinutes + nightWaitMinutes
     }
 
     /// The most recently generated full brief text (for the notification tap-through), or nil before the
@@ -267,6 +280,12 @@ enum CoachBriefScheduler {
         let nowMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
         guard nowMinutes >= timeMinutes else { return true }                                  // not yet time today
         guard UserDefaults.standard.string(forKey: K.lastRun) != dayKey(now) else { return true } // already ran today
+        // Not scored yet: say nothing now. The next completed pass (`IntelligenceEngine.onPassCompleted`) or
+        // foreground entry asks again, and past the wait it goes out regardless.
+        if shouldWaitForNight(nowMinutes: nowMinutes, scheduledMinutes: timeMinutes,
+                              nightReady: nightIsReady?() ?? true) {
+            return true
+        }
 
         // One attempt at a time; see `generationInFlight` for why the day guard alone is not enough.
         guard await claimGeneration() else { return true }
@@ -277,9 +296,14 @@ enum CoachBriefScheduler {
             // No key/consent/network, or the provider returned nothing. Never mark the day done, so the
             // next wake (BGTask retry, or the next foreground open) tries again. Post a low-key retry
             // notification rather than silently doing nothing — the PRD's "unavailable, tap to retry".
-            postNotification(title: String(localized: "Coach brief unavailable"),
-                              body: String(localized: "Couldn't generate today's brief. Tap to try again in Coach."),
-                              isRetry: true)
+            // Once a day (personal fork): a retry now also runs after every completed pass, and each would
+            // otherwise sound the same notification again.
+            if UserDefaults.standard.string(forKey: K.lastFailureNotice) != dayKey(now) {
+                UserDefaults.standard.set(dayKey(now), forKey: K.lastFailureNotice)
+                postNotification(title: String(localized: "Coach brief unavailable"),
+                                  body: String(localized: "Couldn't generate today's brief. Tap to try again in Coach."),
+                                  isRetry: true)
+            }
             return false
         }
 

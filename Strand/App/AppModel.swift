@@ -293,6 +293,12 @@ final class AppModel: ObservableObject {
         // was computed per day. `live` is captured strongly (created just above) , the engine outlives the
         // app session, so there's no retain-cycle risk worth a weak dance here. (Sleep overhaul §2.5.)
         self.intelligence.diagnosticSink = { [live] line, domain in live.append(log: line, domain: domain) }
+        // Morning Coach brief (personal fork): it waits for last night to be scored, so ask it again each time
+        // a pass completes, and tell it how to recognise a scored night.
+        CoachBriefScheduler.nightIsReady = { [intelligence] in intelligence.hasScoredNight(endingOn: Date()) }
+        self.intelligence.onPassCompleted = { [coach] in
+            Task { @MainActor in await CoachBriefScheduler.catchUpIfDue { await coach.generateBrief() } }
+        }
         // Workouts & GPS test mode (Test Centre): wire the Repository (auto-detect inputs/why + cross-source
         // dedup decisions) and the GPS recorder (fix-progress) tagged sinks to the SAME shareable strap log.
         // Each emitter re-checks `TestCentre.active(.workouts)` before building a line, so these wirings are

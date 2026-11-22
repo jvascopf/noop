@@ -55,6 +55,9 @@ final class IntelligenceEngine: ObservableObject {
     /// found the lock taken (`runEffortRescoreIfNeeded`).
     private var completedPasses = 0
     private var lastCompletedPassDays = 0
+    /// Called on the main actor after every pass that runs to completion (personal fork). The morning
+    /// Coach brief listens here so it can go out once last night is scored instead of at a fixed minute.
+    var onPassCompleted: (() -> Void)?
     /// #899 heal bound: true while the last heal already re-armed a rescore, so a heal firing again on
     /// the very next pass cannot re-arm a second time (the Android twin is hard-bounded to exactly one
     /// re-pass; this mirrors it). Reset by any pass whose heal finds nothing, restoring the budget.
@@ -716,6 +719,15 @@ final class IntelligenceEngine: ObservableObject {
         }
     }
 
+    /// Whether the night that ended on `date`'s local day has been scored with sleep (personal fork). The
+    /// morning Coach brief reads this so it does not go out before the night it is about has synced.
+    func hasScoredNight(endingOn date: Date) -> Bool {
+        let now = Int(date.timeIntervalSince1970)
+        let tzOffset = TimeZone.current.secondsFromGMT(for: date)
+        let today = AnalyticsEngine.dayString(Self.midnightLocal(now, offsetSec: tzOffset), offsetSec: tzOffset)
+        return results.contains { $0.day == today && ($0.sleepMin ?? 0) > 0 }
+    }
+
     /// A one-shot full-history recompute guarded by its own `flagKey` (`restingHRRescoreFlagKey`): every
     /// computed night is re-scored once, preserving cached-only days like the shared repair above. Returns
     /// whether this call ran the pass to completion.
@@ -726,9 +738,23 @@ final class IntelligenceEngine: ObservableObject {
         // at launch, which is exactly when a strap reconnect starts a post-offload pass, and a busy install
         // re-arms those back to back: a field log showed the resting-HR rescore still unrun a day after
         // install, having lost the race on every launch in between.
+        //
+        // Also wait while backgrounded (personal fork). A strap-restore wake launches the app in the
+        // background, where a paced full-history pass cannot finish before iOS suspends or ends the process.
+        // Retrying it there held the re-score lock on every wake, so each post-offload pass queued behind it
+        // and a whole night went unscored. The shared history repair above has the same background guard.
+        var scoredRecentFirst = false
         while !Task.isCancelled {
-            while computing && !Task.isCancelled {
+            while (computing || RescoreBackgroundScheduler.isBackgrounded) && !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
+            }
+            if Task.isCancelled { break }
+            // Score the recent window first, so a fresh night is on screen within seconds rather than after
+            // the several minutes the full history takes.
+            if !scoredRecentFirst {
+                scoredRecentFirst = true
+                await analyzeRecent(maxDays: 21, triggerLabel: "one-shot-recent-first")
+                continue
             }
             let passesBefore = completedPasses
             await analyzeRecent(maxDays: historyDays, triggerLabel: "one-shot-history-rescore",
@@ -3110,6 +3136,7 @@ final class IntelligenceEngine: ObservableObject {
             backgroundedAtEnd: RescoreBackgroundScheduler.isBackgrounded), nil)
         completedPasses += 1
         lastCompletedPassDays = maxDays
+        onPassCompleted?()
         // #1681: a pass that completes while leaving the mark SET looks identical in a capture to one that
         // cleared it. Rare-event evidence, so always-on: it costs a line only when it actually happens,
         // and it is exactly what is missing when someone reports the app re-scoring on every launch.
