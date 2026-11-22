@@ -2490,9 +2490,9 @@ private struct LiquidFullWidthNavigationAction: View {
 }
 
 /// The live heart-rate readout leaf. Owns LiveState so the ~1 Hz HR notifies re-render ONLY this card,
-/// never the whole Today (the isolation the classic Today depends on). Keeps its own rolling buffer of
-/// live samples, shows the current bpm live with a beat-by-beat trace, and falls back to today's banked
-/// 5-minute trace when the strap isn't streaming.
+/// never the whole Today (the isolation the classic Today depends on). Shows the current bpm live over the
+/// chosen window of stored HR (`TodayHRWindow`), with live beats merged into the newest buckets, and falls
+/// back to today's banked 5-minute trace when the window holds nothing yet.
 private struct LiquidLiveHR: View {
     var tint: Color
     var fallback: [Double]        // today's banked 5-minute buckets — shown when there's no live stream
@@ -2503,16 +2503,44 @@ private struct LiquidLiveHR: View {
     var animated: Bool
 
     @EnvironmentObject private var live: LiveState
-    @State private var samples: [Double] = []
+    @EnvironmentObject private var repo: Repository
+    /// Personal fork: the card shows a fixed window of stored HR (`TodayHRWindow`) instead of the last ~90 live
+    /// seconds, so it no longer opens on the previous launch's trace and then cuts to a minute and a half.
+    @AppStorage(TodayHRWindow.key) private var windowMinutes = TodayHRWindow.defaultMinutes
+    /// Per-bucket means read from the store, oldest first.
+    @State private var stored: [(ts: Int, bpm: Double)] = []
+    /// Newest stored sample at the last read; live beats after it fill the newest buckets until the next read.
+    @State private var storedThrough = 0
+    @State private var liveBeats: [HRSample] = []
     @State private var beat = false
     @State private var scrubX: CGFloat?
     #if os(iOS)
     @State private var scrubEngaged = false
     #endif
-    private let maxSamples = 90   // ~1.5 min of 1 Hz live HR, enough to read the shape
 
-    private var isLive: Bool { live.connected && samples.count >= 2 }
-    private var series: [Double] { isLive ? samples : fallback }
+    private var isLive: Bool { live.connected && (live.heartRate ?? 0) > 0 }
+    private var bucketSeconds: Int { TodayHRWindow.bucketSeconds(windowMinutes: windowMinutes) }
+    /// The window's buckets: the stored means, with live beats newer than the last read merged in.
+    private var windowPoints: [(ts: Int, bpm: Double)] {
+        let from = TodayHRWindow.start(windowMinutes: windowMinutes, now: Date())
+        let floor = from - bucketSeconds
+        var byTs: [Int: Double] = [:]
+        for p in stored where p.ts >= floor { byTs[p.ts] = p.bpm }
+        let fresh = liveBeats.filter { $0.ts > storedThrough }
+        for p in TodayHRWindow.buckets(fresh, from: floor, bucketSeconds: bucketSeconds) {
+            byTs[p.ts] = byTs[p.ts].map { ($0 + p.bpm) / 2 } ?? p.bpm
+        }
+        return byTs.keys.sorted().map { ($0, byTs[$0]!) }
+    }
+    private var usesWindow: Bool { windowPoints.count >= 2 }
+    private var series: [Double] { usesWindow ? windowPoints.map(\.bpm) : fallback }
+    private var seriesSegments: [String]? {
+        if usesWindow {
+            // A gap of more than three buckets (the strap off the wrist) reads as a break, not a climb.
+            return hrGapSegments(bucketTs: windowPoints.map(\.ts), bucketSeconds: bucketSeconds * 3)
+        }
+        return fallbackSegments.count == fallback.count ? fallbackSegments : nil
+    }
     /// The big number is the LIVE heart rate only. It used to fall back to the last banked 5-minute average, drawn
     /// exactly like a live reading, so with the strap off the wrist the card went on showing one (a tester's 91). The
     /// day's trace and its labelled min / avg / max still show without a live strap.
@@ -2521,7 +2549,14 @@ private struct LiquidLiveHR: View {
         return hr
     }
     private var subtitle: String {
-        if isLive { return String(localized: "Live · beat by beat") }
+        if usesWindow {
+            switch windowMinutes {
+            case 30: return String(localized: "Last 30 minutes · 1-minute average")
+            case 120: return String(localized: "Last 2 hours · 1-minute average")
+            case TodayHRWindow.sinceMidnight: return String(localized: "5-minute average · since midnight")
+            default: return String(localized: "Last hour · 1-minute average")
+            }
+        }
         if fallback.count >= 2 { return String(localized: "5-minute average · since midnight") }
         return live.connected ? String(localized: "Waiting for the strap") : String(localized: "Strap not connected")
     }
@@ -2569,9 +2604,7 @@ private struct LiquidLiveHR: View {
                     LiquidHeartRateGrid()
                     // Historical buckets cannot change between live ticks. Do not run the decorative
                     // trace clock for this fallback; genuine live HR keeps its existing animation.
-                    LiquidThread(bpm: series,
-                                 segments: isLive ? nil : (fallbackSegments.count == series.count
-                                                           ? fallbackSegments : nil),
+                    LiquidThread(bpm: series, segments: seriesSegments,
                                  tint: tint, height: 92, animated: animated && isLive)
                 }
                 .frame(height: 92)
@@ -2608,15 +2641,31 @@ private struct LiquidLiveHR: View {
                     .padding(.vertical, 24)
             }
         }
-        .onAppear { if samples.isEmpty, let hr = live.heartRate, hr > 0 { samples = [Double(hr)] } }
+        // Re-read the window from the store on appear, when the window changes, and once a minute. The live
+        // stream is flushed to the store every ~30 s, so each read also absorbs the beats merged in meanwhile.
+        .task(id: windowMinutes) {
+            while !Task.isCancelled {
+                await reloadWindow()
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
+            }
+        }
         .onChangeCompat(of: live.heartRate) { hr in
-            // No live heart rate (the strap off the wrist, or gone): drop the trace, so the card stops calling an
-            // old one "Live" and shows today's average under its own label.
-            guard let hr, hr > 0 else { samples.removeAll(); return }
-            samples.append(Double(hr))
-            if samples.count > maxSamples { samples.removeFirst(samples.count - maxSamples) }
+            // No live heart rate (the strap off the wrist, or gone): keep the stored window, drop the live beats.
+            guard let hr, hr > 0 else { liveBeats.removeAll(); return }
+            let now = Int(Date().timeIntervalSince1970)
+            liveBeats.append(HRSample(ts: now, bpm: hr))
+            liveBeats.removeAll { $0.ts <= storedThrough }
             beat.toggle()
         }
+    }
+
+    private func reloadWindow() async {
+        let now = Date()
+        let floor = TodayHRWindow.start(windowMinutes: windowMinutes, now: now) - bucketSeconds
+        let samples = await repo.hrSamples(from: floor, to: Int(now.timeIntervalSince1970), limit: 200_000)
+        stored = TodayHRWindow.buckets(samples, from: floor, bucketSeconds: bucketSeconds)
+        storedThrough = samples.last.map { max($0.ts, storedThrough) } ?? storedThrough
+        liveBeats.removeAll { $0.ts <= storedThrough }
     }
 
     private func stat(_ label: String, _ v: Double?) -> some View {

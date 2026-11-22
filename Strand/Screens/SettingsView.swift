@@ -1892,9 +1892,26 @@ struct SettingsView: View {
                     .font(StrandFont.caption)
                     .foregroundStyle(StrandPalette.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
+                rowDivider
+                FormRow(label: "Heart rate card") {
+                    Picker("Heart rate card", selection: $todayHRWindowMinutes) {
+                        Text("Last 30 minutes").tag(30)
+                        Text("Last hour").tag(60)
+                        Text("Last 2 hours").tag(120)
+                        Text("Since midnight").tag(TodayHRWindow.sinceMidnight)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+                Text("How much of today's heart rate the Today card shows. Live beats are added as they arrive.")
+                    .font(StrandFont.footnote)
+                    .foregroundStyle(StrandPalette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
+    /// Window of the Liquid Today heart-rate card (personal fork); read by `LiquidLiveHR`.
+    @AppStorage(TodayHRWindow.key) private var todayHRWindowMinutes = TodayHRWindow.defaultMinutes
 
     /// Live Sessions (beta) — the silent-guardian in-workout coach. Default ON (the entry itself is
     /// BETA-labelled on the Liquid Today); off removes the Start-session control entirely. Same key the
