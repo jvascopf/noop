@@ -918,18 +918,24 @@ struct LiquidTodayView: View {
         case .vitality:
             cardLink(.metric("vitality"), title: card.title, sub: card.subtitle,
                      value: intText(vitality), tint: liquidPurple, frac: frac(vitality))
+        // HRV, resting HR and respiratory rate read the same per-field carries as the Key Metrics tiles
+        // (personal fork), so a card cannot show a dash beside a tile showing a value while tonight is
+        // still being scored.
         case .hrv:
+            let hrv = displayDay?.avgHrv ?? hrvDay?.avgHrv
             cardLink(.metric("hrv"), title: card.title, sub: card.subtitle,
-                     value: unitText(displayDay?.avgHrv, card.unit), tint: StrandPalette.metricCyan,
-                     frac: fracOver(displayDay?.avgHrv, 120))
+                     value: unitText(hrv, card.unit), tint: StrandPalette.metricCyan,
+                     frac: fracOver(hrv, 120))
         case .restingHr:
+            let rhr = (displayDay?.restingHr ?? restingHrDay?.restingHr).map(Double.init)
             cardLink(.metric("rhr"), title: card.title, sub: card.subtitle,
-                     value: unitText(displayDay?.restingHr.map(Double.init), card.unit),
-                     tint: StrandPalette.metricRose, frac: fracOver(displayDay?.restingHr.map(Double.init), 100))
+                     value: unitText(rhr, card.unit),
+                     tint: StrandPalette.metricRose, frac: fracOver(rhr, 100))
         case .respiratory:
+            let resp = displayDay?.respRateBpm ?? vitalsDay?.respRateBpm ?? respDay?.respRateBpm
             cardLink(.metric("resp_rate"), title: card.title, sub: card.subtitle,
-                     value: unitText(displayDay?.respRateBpm, card.unit, decimals: 1),
-                     tint: StrandPalette.accent, frac: fracOver(displayDay?.respRateBpm, 24))
+                     value: unitText(resp, card.unit, decimals: 1),
+                     tint: StrandPalette.accent, frac: fracOver(resp, 24))
         case .steps:
             // Route by the EXACT (key, source) the tile chose to display — measured my-whoop, imported
             // apple-health, or the my-whoop estimate — NOT by bare key (bare "steps" resolves to

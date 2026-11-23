@@ -4,6 +4,8 @@
 #
 # Usage: Tools/personal/install-ios.sh [device-udid]
 # Without an argument, the first connected physical iPhone is used.
+# Builds Release by default: a Debug (-Onone) build runs the analytics about 50 times slower, which made a
+# 21-night re-score take four minutes and iOS end it before last night was scored. CONFIG=Debug overrides.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -31,12 +33,13 @@ if [[ -z "$device" ]]; then
   exit 1
 fi
 
+config="${CONFIG:-Release}"
 mkdir -p build
 echo "==> xcodegen generate"
 xcodegen generate --quiet
 
-echo "==> Building NOOPiOS for $device (log: build/ios-install.log)"
-if ! xcodebuild -project Strand.xcodeproj -scheme NOOPiOS -configuration Debug \
+echo "==> Building NOOPiOS ($config) for $device (log: build/ios-install.log)"
+if ! xcodebuild -project Strand.xcodeproj -scheme NOOPiOS -configuration "$config" \
      -destination "id=$device" -derivedDataPath build/dd -allowProvisioningUpdates \
      build >build/ios-install.log 2>&1; then
   grep -E 'error:' build/ios-install.log | sort -u | head -20 >&2
@@ -44,7 +47,7 @@ if ! xcodebuild -project Strand.xcodeproj -scheme NOOPiOS -configuration Debug \
   exit 1
 fi
 
-app=build/dd/Build/Products/Debug-iphoneos/NOOP.app
+app="build/dd/Build/Products/$config-iphoneos/NOOP.app"
 version="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")"
 build="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")"
 echo "==> Installing NOOP $version ($build) @ $(git rev-parse --short HEAD)"
