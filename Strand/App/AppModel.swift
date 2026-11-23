@@ -537,6 +537,8 @@ final class AppModel: ObservableObject {
             // BEFORE the Effort rescore + analyzeRecent loop so both operate on a cleaned DB. Persisted
             // flag → no-op on every subsequent launch; idempotent on a clean DB.
             await self.intelligence.runTimestampHealIfNeeded()
+            // Personal fork: log once per build whether Apple's on-device model could back the Coach.
+            await OnDeviceModelProbe.runOncePerBuild { [live] line in live.append(log: line) }
             // One-shot repair: WHOOP rows imported before `skinTempC` was filled carry the export's absolute °C in
             // the deviation column. Move it and recompute the deviation; no-op once done.
             if let store = await self.repo.storeHandle(),
