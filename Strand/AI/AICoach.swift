@@ -845,6 +845,12 @@ final class AICoachEngine: ObservableObject {
                 )
             }
         } catch let e as AICoachError {
+            // Personal fork: the provider stayed unavailable before a word arrived; ask the on-device model.
+            if accumulated.isEmpty, CoachFallback.isTransient(e),
+               let local = await onDeviceChatReply(question: trimmed) {
+                settleFallback(local, placeholder: placeholder.id)
+                return
+            }
             // Mid-stream error: keep the partial text + an interrupted marker (PRD K1 acceptance).
             let partial = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
             if !partial.isEmpty, let lastIdx = messages.indices.last, messages[lastIdx].role == .assistant {
@@ -860,6 +866,12 @@ final class AICoachEngine: ObservableObject {
             // Typed, never text-matched: the message is localized and the case is not.
             if case .badKey = e { keyRejected = true } else { keyRejected = false }
         } catch {
+            // Personal fork: the provider stayed unavailable before a word arrived; ask the on-device model.
+            if accumulated.isEmpty, CoachFallback.isTransient(error),
+               let local = await onDeviceChatReply(question: trimmed) {
+                settleFallback(local, placeholder: placeholder.id)
+                return
+            }
             let partial = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
             if !partial.isEmpty, let lastIdx = messages.indices.last, messages[lastIdx].role == .assistant {
                 messages[lastIdx] = ChatMessage(
@@ -912,6 +924,11 @@ final class AICoachEngine: ObservableObject {
                 messages[lastIdx] = ChatMessage(id: placeholder.id, role: .assistant, text: prefix + clean)
             }
         } catch let e as AICoachError {
+            // Personal fork: the provider stayed unavailable before a word arrived; brief offline instead.
+            if accumulated.isEmpty, CoachFallback.isTransient(e), let local = await offlineBrief() {
+                settleFallback(prefix + local, placeholder: placeholder.id)
+                return
+            }
             let partial = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
             if partial.isEmpty {
                 if let lastIdx = messages.indices.last, messages[lastIdx].role == .assistant {
@@ -927,6 +944,11 @@ final class AICoachEngine: ObservableObject {
             // Typed, never text-matched: the message is localized and the case is not.
             if case .badKey = e { keyRejected = true } else { keyRejected = false }
         } catch {
+            // Personal fork: the provider stayed unavailable before a word arrived; brief offline instead.
+            if accumulated.isEmpty, CoachFallback.isTransient(error), let local = await offlineBrief() {
+                settleFallback(prefix + local, placeholder: placeholder.id)
+                return
+            }
             let partial = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
             if partial.isEmpty {
                 if let lastIdx = messages.indices.last, messages[lastIdx].role == .assistant {
@@ -967,7 +989,13 @@ final class AICoachEngine: ObservableObject {
         let context = await buildFullContext()
         let wire: [(role: ChatMessage.Role, content: String)] =
             [(.user, context + "\n\n---\n\n" + Self.briefInstruction)]
-        guard let reply = try? await callProvider(key: key, messages: wire) else { return nil }
+        let reply: String
+        do {
+            reply = try await callProvider(key: key, messages: wire)
+        } catch {
+            // Personal fork: a busy or unreachable provider still leaves the morning a brief.
+            return CoachFallback.isTransient(error) ? await offlineBrief() : nil
+        }
         let clean = reply.trimmingCharacters(in: .whitespacesAndNewlines)
         return clean.isEmpty ? nil : clean
     }
@@ -1064,15 +1092,21 @@ final class AICoachEngine: ObservableObject {
     }
 
     /// Dispatch to the user's chosen provider client.
+    /// Personal fork: through `CoachFallback.run`, so a busy provider is retried and Gemini falls back to
+    /// its lighter model.
     private func callProvider(key: String,
                               messages: [(role: ChatMessage.Role, content: String)]) async throws -> String {
-        try await provider.client.send(
-            key: key,
-            model: model,
-            systemPrompt: requestSystemPrompt,
-            messages: messages,
-            session: session
-        )
+        var reply = ""
+        try await CoachFallback.run(models: CoachFallback.modelChain(provider: provider, model: model)) { model, _ in
+            reply = try await provider.client.send(
+                key: key,
+                model: model,
+                systemPrompt: requestSystemPrompt,
+                messages: messages,
+                session: session
+            )
+        }
+        return reply
     }
 
     /// K1: Dispatch to the user's chosen provider client's streaming method. The default
@@ -1083,15 +1117,66 @@ final class AICoachEngine: ObservableObject {
                                 messages: [(role: ChatMessage.Role, content: String)],
                                 inlineImage: String? = nil,
                                 onDelta: (String) -> Void) async throws {
-        try await provider.client.streamWithImage(
-            key: key,
-            model: model,
-            systemPrompt: requestSystemPrompt,
-            messages: messages,
-            inlineImage: inlineImage,
-            session: session,
-            onDelta: onDelta
-        )
+        // Personal fork: retried and, on Gemini, moved to the lighter model while nothing has streamed yet.
+        try await CoachFallback.run(models: CoachFallback.modelChain(provider: provider, model: model)) { model, delivered in
+            try await provider.client.streamWithImage(
+                key: key,
+                model: model,
+                systemPrompt: requestSystemPrompt,
+                messages: messages,
+                inlineImage: inlineImage,
+                session: session,
+                onDelta: { delivered = true; onDelta($0) }
+            )
+        }
+    }
+
+    // MARK: Personal fork: answers when the provider does not
+
+    /// The app's language tag, as `requestSystemPrompt` sends it.
+    private var appLanguageTag: String { Bundle.main.preferredLocalizations.first ?? "en" }
+
+    /// The day the fixed brief describes and the 30-day HRV average it compares against.
+    private func templateBrief() -> String? {
+        let last30 = repo.days.suffix(30).compactMap { $0.avgHrv }
+        let average = last30.isEmpty ? nil : last30.reduce(0, +) / Double(last30.count)
+        return CoachFallback.templateBrief(day: repo.today ?? repo.days.last, hrvAverage: average)
+    }
+
+    /// Today's brief from the on-device model, else the fixed brief. Nil when neither has anything to say.
+    private func offlineBrief() async -> String? {
+        let prompt = CoachFallback.trimmedContext(buildContext()) + "\n\n---\n\n" + Self.briefInstruction
+        if let reply = await CoachFallback.onDeviceReply(
+            instructions: CoachFallback.onDeviceInstructions(languageTag: appLanguageTag), prompt: prompt) {
+            return reply + "\n\n*" + CoachFallback.onDeviceNote + "*"
+        }
+        return templateBrief()
+    }
+
+    /// The on-device model's answer to `question`, with the data context and the last few turns before it.
+    private func onDeviceChatReply(question: String) async -> String? {
+        guard CoachFallback.onDeviceAvailable else { return nil }
+        let data = dataConsent ? CoachFallback.trimmedContext(buildContext()) : noConsentNote
+        // The question and the empty reply placeholder are the last two messages.
+        let earlier = messages.dropLast(2).suffix(CoachFallback.onDeviceHistoryTurns)
+            .map { ($0.role == .user ? "User: " : "Coach: ") + $0.text }
+        var prompt = data
+        if !earlier.isEmpty { prompt += "\n\nEarlier in this chat:\n" + earlier.joined(separator: "\n") }
+        prompt += "\n\nQuestion: " + question
+        guard let reply = await CoachFallback.onDeviceReply(
+            instructions: CoachFallback.onDeviceInstructions(languageTag: appLanguageTag), prompt: prompt) else { return nil }
+        return reply + "\n\n*" + CoachFallback.onDeviceNote + "*"
+    }
+
+    /// Puts `text` in the assistant placeholder `id` and clears the error. Used when a fallback answered.
+    private func settleFallback(_ text: String, placeholder id: UUID) {
+        if let lastIdx = messages.indices.last, messages[lastIdx].role == .assistant {
+            messages[lastIdx] = ChatMessage(id: id, role: .assistant, text: text)
+        } else {
+            appendMessage(ChatMessage(id: id, role: .assistant, text: text))
+        }
+        errorText = nil
+        keyRejected = false
     }
 
     /// Sliding window over the chat: the FIRST user turn (it carries the metrics context) plus the most
