@@ -1484,7 +1484,7 @@ struct LiquidTodayView: View {
                     }
                     Spacer()
                     (Text(effortText(w.strain)).font(StrandFont.number(15))
-                        + Text(" EFFORT").font(StrandFont.overlineScaled(9)))
+                        + Text(" " + String(localized: "Effort").uppercased()).font(StrandFont.overlineScaled(9)))
                         .foregroundStyle(StrandPalette.textPrimary)
                 }
                 LiquidTube(frac: (w.strain ?? 0) / 100, tint: StrandPalette.effortColor, height: 12, animated: false)
