@@ -993,7 +993,7 @@ struct LiquidTodayView: View {
             // #616: show the resolved imported-first value and route to the matching detail source, like
             // the Steps card — was a "–" placeholder wired to the imported-only detail.
             cardLink(.metricSourced(key: caloriesDetailKey, source: caloriesDetailSource), title: card.title, sub: card.subtitle,
-                     value: intText(caloriesCount), tint: StrandPalette.metricAmber, frac: fracOver(caloriesCount, 800))
+                     value: intText(caloriesCount), tint: StrandPalette.metricAmber, frac: fracOver(caloriesCount, caloriesBarFull))
         case .sleep:
             cardLink(.sleep, title: card.title, sub: card.subtitle,
                      value: sleepText, tint: StrandPalette.restColor, frac: fracOver(displayDay?.totalSleepMin, 480))
@@ -1352,7 +1352,7 @@ struct LiquidTodayView: View {
             // #616: imported-first value (imported ?: activeKcalEst) + route the tap to the matching
             // detail source, so the number, its sparkline and the chart it opens all agree.
             ktile(String(localized: "Calories"), icon: keyMetricIcon(metric), intText(caloriesCount), "kcal", StrandPalette.metricAmber,
-                  fracOver(caloriesCount, 800), key: "energy_kcal", detailMetric: caloriesDetailMetric)
+                  fracOver(caloriesCount, caloriesBarFull), key: "energy_kcal", detailMetric: caloriesDetailMetric)
         case .skinTemp:
             // Added 2026-08-24 (queue 11c follow-up): first Key Metrics appearance for Skin Temp — was
             // already a "Your Cards" tile (`DashboardCard.skinTemp`), never a Key Metrics one. Same
@@ -1920,9 +1920,15 @@ struct LiquidTodayView: View {
     // #616: calories resolved IMPORTED-FIRST (the day's imported Apple active energy — the figure these
     // surfaces already showed — else NOOP's on-device HR estimate `activeKcalEst`) — one number across the
     // tile, card and the detail it taps to. Mirrors the steps precedence above.
+    /// Personal fork: the strap's whole-day heart-rate estimate (resting plus active) whenever the strap has HR
+    /// for the day, Apple Health's active energy only when it does not. Without an Apple Watch, Health counts
+    /// only the iPhone's motion, so a gym session's calories never reached the card.
     private var caloriesCount: Double? {
-        importedActiveKcalDay ?? displayDay?.activeKcalEst
+        displayDay?.activeKcalEst ?? importedActiveKcalDay
     }
+
+    /// Where the calorie bar is full: a whole-day total runs to a few thousand kcal, active energy to hundreds.
+    private var caloriesBarFull: Double { displayDay?.activeKcalEst != nil ? 3500 : 800 }
 
     private var caloriesDetailMetric: MetricDescriptor? {
         MetricCatalog.todayCaloriesMetric(hasImportedKcal: importedActiveKcalDay != nil,

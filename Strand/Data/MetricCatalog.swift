@@ -238,9 +238,12 @@ enum MetricCatalog {
     /// detail (`energy_kcal` / my-whoop, which `exploreSeries` fuses from `activeKcalEst`). Without this the
     /// Calories card always opened the imported-only detail, so an on-device (WHOOP 5.0) user with no import
     /// saw an empty/disagreeing chart. Defaults to the on-device detail when no import is present.
+    ///
+    /// Personal fork: on-device first, matching the Liquid Today value, which now prefers the strap's
+    /// heart-rate estimate over Health's motion-only active energy.
     static func todayCaloriesMetric(hasImportedKcal: Bool, hasOnDeviceKcal: Bool = false) -> MetricDescriptor? {
-        if hasImportedKcal { return metric(key: "active_kcal", source: "apple-health") }
         if hasOnDeviceKcal { return metric(key: "energy_kcal", source: "my-whoop") }
+        if hasImportedKcal { return metric(key: "active_kcal", source: "apple-health") }
         return metric(key: "energy_kcal", source: "my-whoop")
     }
 
