@@ -1185,7 +1185,7 @@ struct InsightsView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(accent)
                         .frame(width: 20)
-                    Text(cost.sport)
+                    Text(WorkoutSource.displaySport(cost.sport))
                         .font(StrandFont.headline)
                         .foregroundStyle(StrandPalette.textPrimary)
                         .lineLimit(1)

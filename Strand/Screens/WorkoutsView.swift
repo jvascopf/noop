@@ -1043,7 +1043,7 @@ struct WorkoutsView: View {
                      caption: String(localized: "covered"),
                      accent: StrandPalette.metricCyan)
             StatTile(label: "Most Active",
-                     value: modal.sport,
+                     value: modal.count > 0 ? WorkoutSource.displaySport(modal.sport) : modal.sport,
                      caption: modal.count > 0
                          ? (modal.count == 1 ? String(localized: "1 session") : String(localized: "\(modal.count) sessions"))
                          : nil,

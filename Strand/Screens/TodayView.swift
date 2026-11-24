@@ -155,7 +155,7 @@ private struct ActiveWorkoutIndicatorCard: View {
     }
 
     private var sportLabel: some View {
-        Text(model.sport)
+        Text(WorkoutSource.displaySport(model.sport))
             .font(StrandFont.headline)
             .foregroundStyle(StrandPalette.textPrimary)
             .lineLimit(1)
