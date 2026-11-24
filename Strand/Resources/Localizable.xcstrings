@@ -69396,7 +69396,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Entre num esporte."
+            "value": "Indica a modalidade."
           }
         },
         "ru": {
@@ -143335,7 +143335,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "ESPORTE"
+            "value": "MODALIDADE"
           }
         },
         "ru": {
@@ -153683,7 +153683,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esporte"
+            "value": "Modalidade"
           }
         },
         "ru": {
@@ -171262,7 +171262,7 @@
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esporte principal"
+            "value": "Modalidade principal"
           }
         },
         "ru": {
@@ -219872,6 +219872,9 @@
     "Charge is low: keep today easy and put sleep first.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Charge is low: keep today easy and put sleep first."}}, "de": {"stringUnit": {"state": "translated", "value": "Die Energie ist niedrig: Lass es heute ruhig angehen und stell den Schlaf an erste Stelle."}}, "es": {"stringUnit": {"state": "translated", "value": "La Carga es baja: hoy tómatelo con calma y prioriza el sueño."}}, "fr": {"stringUnit": {"state": "translated", "value": "La Charge est basse : reste tranquille aujourd'hui et donne la priorité au sommeil."}}, "it": {"stringUnit": {"state": "translated", "value": "La Carica è bassa: oggi vai piano e metti il sonno al primo posto."}}, "pl": {"stringUnit": {"state": "translated", "value": "Energia jest niska: dziś odpuść i postaw na sen."}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "A Carga está baixa: hoje vai com calma e põe o sono em primeiro lugar."}}, "ru": {"stringUnit": {"state": "translated", "value": "Заряд низкий: сегодня не нагружайте себя и поставьте сон на первое место."}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "能量偏低：今天放轻松，优先保证睡眠。"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "能量偏低：今天放輕鬆，優先保證睡眠。"}}}},
     "Charge is moderate: train, but keep the intensity in check.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Charge is moderate: train, but keep the intensity in check."}}, "de": {"stringUnit": {"state": "translated", "value": "Die Energie ist mittel: Trainiere, aber halte die Intensität im Rahmen."}}, "es": {"stringUnit": {"state": "translated", "value": "La Carga es moderada: entrena, pero controla la intensidad."}}, "fr": {"stringUnit": {"state": "translated", "value": "La Charge est moyenne : entraîne-toi, mais garde l'intensité sous contrôle."}}, "it": {"stringUnit": {"state": "translated", "value": "La Carica è moderata: allenati, ma tieni sotto controllo l'intensità."}}, "pl": {"stringUnit": {"state": "translated", "value": "Energia jest umiarkowana: trenuj, ale pilnuj intensywności."}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "A Carga está moderada: treina, mas controla a intensidade."}}, "ru": {"stringUnit": {"state": "translated", "value": "Заряд средний: тренируйтесь, но следите за интенсивностью."}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "能量中等：可以训练，但要控制强度。"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "能量中等：可以訓練，但要控制強度。"}}}},
     "Charge is high: a good day for a harder session.": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Charge is high: a good day for a harder session."}}, "de": {"stringUnit": {"state": "translated", "value": "Die Energie ist hoch: ein guter Tag für eine härtere Einheit."}}, "es": {"stringUnit": {"state": "translated", "value": "La Carga es alta: buen día para una sesión más exigente."}}, "fr": {"stringUnit": {"state": "translated", "value": "La Charge est élevée : une bonne journée pour une séance plus intense."}}, "it": {"stringUnit": {"state": "translated", "value": "La Carica è alta: una buona giornata per una sessione più impegnativa."}}, "pl": {"stringUnit": {"state": "translated", "value": "Energia jest wysoka: dobry dzień na mocniejszy trening."}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "A Carga está alta: um bom dia para um treino mais exigente."}}, "ru": {"stringUnit": {"state": "translated", "value": "Заряд высокий: хороший день для более тяжёлой тренировки."}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "能量充足：今天适合更高强度的训练。"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "能量充足：今天適合更高強度的訓練。"}}}},
+    "Choose a sport": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Choose a sport"}}, "de": {"stringUnit": {"state": "translated", "value": "Sportart wählen"}}, "es": {"stringUnit": {"state": "translated", "value": "Elige un deporte"}}, "fr": {"stringUnit": {"state": "translated", "value": "Choisis un sport"}}, "it": {"stringUnit": {"state": "translated", "value": "Scegli uno sport"}}, "pl": {"stringUnit": {"state": "translated", "value": "Wybierz dyscyplinę"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Escolhe a modalidade"}}, "ru": {"stringUnit": {"state": "translated", "value": "Выберите вид спорта"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择运动"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "選擇運動"}}}},
+    "Another sport…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Another sport…"}}, "de": {"stringUnit": {"state": "translated", "value": "Andere Sportart…"}}, "es": {"stringUnit": {"state": "translated", "value": "Otro deporte…"}}, "fr": {"stringUnit": {"state": "translated", "value": "Autre sport…"}}, "it": {"stringUnit": {"state": "translated", "value": "Altro sport…"}}, "pl": {"stringUnit": {"state": "translated", "value": "Inna dyscyplina…"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Outra modalidade…"}}, "ru": {"stringUnit": {"state": "translated", "value": "Другой вид спорта…"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "其他运动…"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "其他運動…"}}}},
+    "Type the sport": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Type the sport"}}, "de": {"stringUnit": {"state": "translated", "value": "Sportart eingeben"}}, "es": {"stringUnit": {"state": "translated", "value": "Escribe el deporte"}}, "fr": {"stringUnit": {"state": "translated", "value": "Saisis le sport"}}, "it": {"stringUnit": {"state": "translated", "value": "Scrivi lo sport"}}, "pl": {"stringUnit": {"state": "translated", "value": "Wpisz dyscyplinę"}}, "pt-PT": {"stringUnit": {"state": "translated", "value": "Escreve a modalidade"}}, "ru": {"stringUnit": {"state": "translated", "value": "Введите вид спорта"}}, "zh-Hans": {"stringUnit": {"state": "translated", "value": "输入运动"}}, "zh-Hant": {"stringUnit": {"state": "translated", "value": "輸入運動"}}}},
         "Oura": {"shouldTranslate": false}
   },
   "version": "1.0"

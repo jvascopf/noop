@@ -2,13 +2,6 @@ import SwiftUI
 import StrandDesign
 import WhoopStore
 
-/// Carries the measured natural height of the Sport picker's floating suggestion panel up to the
-/// view, so the overlay can size itself to its content (capped) rather than to the text field.
-private struct SuggestionsHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
-}
-
 // MARK: - Manual workout sheet
 //
 // Add a workout you tracked elsewhere, or edit one you already logged. Six inputs — sport,
@@ -62,14 +55,12 @@ struct ManualWorkoutSheet: View {
     private enum NumberField: Hashable { case avgHr, calories, distance }
     @FocusState private var focusedField: NumberField?
 
-    /// Whether the Sport text field is being edited — drives whether the catalogue suggestions show
-    /// beneath it. The list also stays hidden once the typed text exactly matches a catalogue sport
-    /// (a settled choice), so the form isn't permanently half-covered.
+    /// Focus for the free-text sport field, so choosing "Another sport…" puts the cursor in it.
     @FocusState private var sportFocused: Bool
 
-    /// Measured natural height of the floating suggestion panel's content, so the overlay can size
-    /// itself (capped at 168) instead of being squeezed to the text field's height. See `suggestionList`.
-    @State private var suggestionsHeight: CGFloat = 0
+    /// Whether the free-text sport field shows: chosen from the menu, or the session already carries a
+    /// sport the catalogue does not name.
+    @State private var customSport = false
 
     init(editing: WorkoutRow? = nil,
          estimateKcal: ((_ start: Int, _ end: Int) async -> Double?)? = nil,
@@ -81,7 +72,9 @@ struct ManualWorkoutSheet: View {
         let e = editing
         // Seeds the LOCALE-STABLE editable form, not the localized display: the field's content is
         // persisted verbatim on save, and a translated word would split cross-source dedup per language.
-        _sport = State(initialValue: e.map { WorkoutSource.editableSport($0.sport) } ?? "")
+        let initialSport = e.map { WorkoutSource.editableSport($0.sport) } ?? ""
+        _sport = State(initialValue: initialSport)
+        _customSport = State(initialValue: !initialSport.isEmpty && WorkoutCatalog.sport(named: initialSport) == nil)
         // A fresh add opens on a VALID 45 minute session ending now, keeping the long-standing 45 minute
         // default length. It used to start at `Date()` with a 45 minute duration, so the implied end was
         // always 45 minutes in the future and `buildManualRow` rejected it: the sheet opened with Save
@@ -163,9 +156,6 @@ struct ManualWorkoutSheet: View {
                 field(String(localized: "Sport")) {
                     sportPicker
                 }
-                // Raise the Sport field above the following rows so its floating suggestion dropdown
-                // (an overlay, see `sportPicker`) draws ON TOP of Start / End / Duration, not behind them.
-                .zIndex(1)
                 field(String(localized: "Start")) {
                     DatePicker("", selection: startBinding, in: ...Date(),
                                displayedComponents: [.date, .hourAndMinute])
@@ -220,118 +210,81 @@ struct ManualWorkoutSheet: View {
 
     // MARK: - Sport picker
     //
-    // A searchable PICKER over the shared WorkoutCatalog (the same named-sport list the live tracker
-    // uses, incl. Padel) with a free-text FALLBACK: the text field IS the value, so an unusual sport
-    // NOOP doesn't enumerate still saves exactly as typed (#519). Typing filters the catalogue
-    // beneath the field; tapping a match fills it; the list collapses on a settled / off-catalogue
-    // entry so the short form isn't permanently covered. Mirrors Android WorkoutsScreen.SportPickerField.
+    // A menu over the shared WorkoutCatalog (the same named-sport list the live tracker uses, incl. Padel),
+    // in the app's language and alphabetical, with the user's recent picks first (#297). "Another sport…"
+    // opens a text field, so an unusual sport NOOP doesn't enumerate still saves exactly as typed (#519).
+    // Personal fork: replaces a text field whose suggestions only appeared while typing, which read as free
+    // text. Values stay the catalogue's English names; only the labels are translated.
 
-    /// Suggestions for the current text — the whole catalogue while empty, else a case-insensitive
-    /// name filter. Empty list ⇒ a free-typed sport with no match (keeps whatever was typed).
-    private var sportSuggestions: [WorkoutCatalog.Sport] { WorkoutCatalog.matching(sport) }
-
-    /// Show the list only while the field is focused, there are matches, and the text isn't already an
-    /// exact catalogue name (a settled choice collapses it).
-    private var showSportSuggestions: Bool {
-        sportFocused && !sportSuggestions.isEmpty && WorkoutCatalog.sport(named: sport) == nil
-    }
-
-    /// #297: the user's last selections, one tap away above the full catalogue. Raw stored names —
-    /// this picker allows free text, so an off-catalogue recent stays selectable here (it just
-    /// carries no GPS hint). Only rendered while the field is empty (typing means searching).
+    /// #297: the user's last selections. Raw stored names, so an off-catalogue recent stays selectable.
     private var recentSports: [String] { RecentSportsPrefs.recent() }
 
-    private var showRecentSports: Bool {
-        sport.trimmingCharacters(in: .whitespaces).isEmpty && !recentSports.isEmpty
+    /// The catalogue sorted by its translated name.
+    private var catalogueByDisplayName: [WorkoutCatalog.Sport] {
+        WorkoutCatalog.all.sorted {
+            WorkoutSource.displaySport($0.name).localizedStandardCompare(WorkoutSource.displaySport($1.name)) == .orderedAscending
+        }
     }
 
     private var sportPicker: some View {
-        TextField("e.g. Running", text: $sport)
-            .textFieldStyle(.plain)
-            .font(StrandFont.body)
-            .foregroundStyle(StrandPalette.textPrimary)
-            .focused($sportFocused)
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(StrandPalette.surfaceInset, in: inputShape)
-            .overlay(inputShape.strokeBorder(StrandPalette.hairline, lineWidth: 1))
-            .accessibilityLabel("Sport")
-            // The suggestion list FLOATS below the field as an overlay instead of sitting inline in the
-            // form. Inline it was the only height-flexible element, so on iPhone with the keyboard up
-            // the fixed-height fields below won the vertical space and squeezed it to nothing — the
-            // #297 Recent block (and even the catalogue matches) never showed. As an overlay it doesn't
-            // take part in the form's layout, so it renders at full height over the rows below; the
-            // parent raises this field's zIndex so it draws on top of them.
-            .overlay(alignment: .bottom) {
-                if showSportSuggestions {
-                    suggestionList
-                        // Pin the panel's TOP to the field's BOTTOM (its own top stands in as the
-                        // bottom-alignment anchor), then nudge it down for a small gap.
-                        .alignmentGuide(.bottom) { $0[.top] }
-                        .offset(y: 6)
-                }
-            }
-    }
-
-    /// The floating suggestion panel (Recent + full catalogue). An overlay proposes the field's small
-    /// height to its content, which would re-squeeze a plain `.frame(maxHeight:)` ScrollView — so we
-    /// MEASURE the content's natural height and set an explicit frame capped at 168, letting it scroll
-    /// only past that. This is the same list the inline version rendered, just floated + self-sized.
-    private var suggestionList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if showRecentSports {
-                    Text("Recent").strandOverline()
-                        .padding(.horizontal, 12).padding(.top, 8)
-                    ForEach(recentSports, id: \.self) { name in
-                        suggestionRow(name, isDistance: WorkoutCatalog.sport(named: name)?.isDistanceSport == true)
+        VStack(alignment: .leading, spacing: 8) {
+            Menu {
+                if !recentSports.isEmpty {
+                    Section(String(localized: "Recent")) {
+                        ForEach(recentSports, id: \.self) { name in sportMenuButton(name) }
                     }
-                    Text("All activities").strandOverline()
-                        .padding(.horizontal, 12).padding(.top, 8)
                 }
-                ForEach(sportSuggestions) { sp in
-                    suggestionRow(sp.name, isDistance: sp.isDistanceSport)
+                Section(String(localized: "All activities")) {
+                    ForEach(catalogueByDisplayName) { sp in sportMenuButton(sp.name) }
                 }
-            }
-            .background(GeometryReader { geo in
-                Color.clear.preference(key: SuggestionsHeightKey.self, value: geo.size.height)
-            })
-        }
-        // #697 parity: this screen builds its OWN ScrollView rather than going through
-        // ScreenScaffold, so it never inherited the scaffold's horizontal-bounce suppression and
-        // could still rubber-band left-right on a purely vertical scroll. Same modifier, same
-        // guard. `.basedOnSize` permits horizontal bounce only when content genuinely overflows
-        // the width, so nothing that is meant to scroll sideways is affected. (#1532 follow-up)
-        #if os(iOS)
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        #endif
-        .frame(height: min(max(suggestionsHeight, 1), 168))
-        .onPreferenceChange(SuggestionsHeightKey.self) { suggestionsHeight = $0 }
-        .background(StrandPalette.surfaceInset, in: inputShape)
-        .overlay(inputShape.strokeBorder(StrandPalette.hairline, lineWidth: 1))
-    }
-
-    /// One tappable suggestion row — shared by the #297 Recent block and the full catalogue list.
-    private func suggestionRow(_ name: String, isDistance: Bool) -> some View {
-        Button {
-            sport = name
-            sportFocused = false
-        } label: {
-            HStack(spacing: 6) {
-                Text(name)
-                    .font(StrandFont.body)
-                    .foregroundStyle(StrandPalette.textPrimary)
-                if isDistance {
-                    Text("· GPS")
-                        .font(StrandFont.footnote)
+                Button(String(localized: "Another sport…")) {
+                    customSport = true
+                    sportFocused = true
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(sport.trimmingCharacters(in: .whitespaces).isEmpty
+                         ? String(localized: "Choose a sport") : WorkoutSource.displaySport(sport))
+                        .font(StrandFont.body)
+                        .foregroundStyle(sport.isEmpty ? StrandPalette.textTertiary : StrandPalette.textPrimary)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(StrandPalette.textTertiary)
                 }
-                Spacer(minLength: 0)
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .background(StrandPalette.surfaceInset, in: inputShape)
+                .overlay(inputShape.strokeBorder(StrandPalette.hairline, lineWidth: 1))
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "Sport"))
+            if customSport {
+                TextField(String(localized: "Type the sport"), text: $sport)
+                    .textFieldStyle(.plain)
+                    .font(StrandFont.body)
+                    .foregroundStyle(StrandPalette.textPrimary)
+                    .focused($sportFocused)
+                    .padding(.horizontal, 12).padding(.vertical, 9)
+                    .background(StrandPalette.surfaceInset, in: inputShape)
+                    .overlay(inputShape.strokeBorder(StrandPalette.hairline, lineWidth: 1))
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Pick \(name)")
+    }
+
+    /// One sport in the menu, its GPS-capable kind marked.
+    private func sportMenuButton(_ name: String) -> some View {
+        Button {
+            sport = name
+            customSport = false
+            sportFocused = false
+        } label: {
+            if WorkoutCatalog.sport(named: name)?.isDistanceSport == true {
+                Text(WorkoutSource.displaySport(name) + " · GPS")
+            } else {
+                Text(WorkoutSource.displaySport(name))
+            }
+        }
     }
 
     // MARK: - Sections
