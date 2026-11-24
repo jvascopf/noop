@@ -103,13 +103,14 @@ struct ManualWorkoutSheet: View {
     /// The stored metres shown as a clean editable number in `system`'s unit (km/mi) — trailing zeros and a
     /// dangling decimal trimmed so the field reads "5.2", not "5.20". Two decimals (~10 m) is plenty for a
     /// hand-entered distance; the field's purpose is manual entry, not preserving GPS's metre precision.
-    private static func distanceEntryString(_ meters: Double, system: UnitSystem) -> String {
+    static func distanceEntryString(_ meters: Double, system: UnitSystem) -> String {
         let km = meters / 1000.0
         let value = system == .imperial ? km * UnitFormatter.milesPerKilometer : km
         var s = String(format: "%.2f", value)
         while s.hasSuffix("0") { s.removeLast() }
         if s.hasSuffix(".") { s.removeLast() }
-        return s
+        // Shown with the locale's separator, the one the decimal pad types next to it.
+        return s.replacingOccurrences(of: ".", with: Locale.current.decimalSeparator ?? ".")
     }
 
     var body: some View {
@@ -398,13 +399,19 @@ struct ManualWorkoutSheet: View {
 
     /// Parsed avg-HR — nil for blank, an out-of-band sentinel handled by buildManualRow otherwise.
     private var avgHr: Int? { Int(avgHrText.trimmingCharacters(in: .whitespaces)) }
-    private var kcal: Double? { Double(kcalText.trimmingCharacters(in: .whitespaces)) }
+    private var kcal: Double? { Self.parseDecimal(kcalText) }
+
+    /// A typed decimal, read with either separator (personal fork). The iOS decimal pad types the locale's
+    /// own, a comma in pt-PT, and `Double("5,2")` is nil, so a 5,2 km run could not be saved.
+    static func parseDecimal(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
+    }
 
     /// Parsed distance in stored METRES — nil for blank (no distance), or when the typed value can't be a
     /// non-negative number. The user enters km/mi; convert to metres for the row. (#1195)
     private var distanceMeters: Double? {
         let t = distanceText.trimmingCharacters(in: .whitespaces)
-        guard !t.isEmpty, let v = Double(t), v >= 0 else { return nil }
+        guard !t.isEmpty, let v = Self.parseDecimal(t), v >= 0 else { return nil }
         let km = distanceUnitSystem == .imperial ? v / UnitFormatter.milesPerKilometer : v
         return km * 1000.0
     }
