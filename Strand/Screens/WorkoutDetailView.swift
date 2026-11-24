@@ -29,6 +29,9 @@ import MapKit
 
 struct WorkoutDetailView: View {
     let row: WorkoutRow
+    /// Opens the edit form for this session (personal fork). Set by a caller that can edit; shown only for a
+    /// session recorded on this device, since imported history stays read-only.
+    var onEdit: ((WorkoutRow) -> Void)? = nil
 
     @EnvironmentObject private var repo: Repository
     @StateObject private var profile = ProfileStore()
@@ -98,8 +101,21 @@ struct WorkoutDetailView: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Done") { dismiss() }
             }
+            if let onEdit, Self.isEditable(source: row.source) {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Edit") { onEdit(row) }
+                }
+            }
         }
         .task { await load() }
+    }
+
+    /// Whether the detail offers Edit: a manual or detected session, never imported history.
+    static func isEditable(source: String) -> Bool {
+        switch WorkoutSource.classify(source) {
+        case .manual, .detected: return true
+        case .whoop, .apple, .lifting, .activityFile: return false
+        }
     }
 
     // MARK: - Load

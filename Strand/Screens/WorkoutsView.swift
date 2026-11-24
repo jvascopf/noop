@@ -286,7 +286,14 @@ struct WorkoutsView: View {
             // detail rides its own NavigationStack inside the sheet (the Done toolbar item + iOS
             // grabber give the dismiss affordances). Mirrors HealthView presenting MetricDetailView.
             NavigationStack {
-                WorkoutDetailView(row: target.row)
+                // Personal fork: Edit closes the detail, then opens the same form as the row's "•••" menu.
+                WorkoutDetailView(row: target.row, onEdit: { row in
+                    detail = nil
+                    Task {
+                        try? await Task.sleep(nanoseconds: 400_000_000)
+                        editWorkout(row)
+                    }
+                })
                     .environmentObject(repo)
             }
             #if os(iOS)
