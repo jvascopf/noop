@@ -36,6 +36,8 @@ struct CoachView: View {
     /// The id typed in the "Custom…" field.
     @State private var customModelDraft: String = ""
     @FocusState private var composerFocused: Bool
+    /// Bumped to ask the page to bring the composer back into view; see `composer`.
+    @State private var composerScrollTick = 0
 
     /// K2: confirmation gate for the destructive "Clear conversation" toolbar action.
     @State private var showClearConfirm = false
@@ -746,7 +748,26 @@ struct CoachView: View {
         .background(NoopPanelSurface(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
             .strokeBorder(StrandPalette.hairline, lineWidth: 1))
+        // Personal fork: the page scrolls, not the field, so a question growing past one line went on under
+        // the keyboard. While the field has focus, each edit asks the page to keep the composer in view.
+        .id(Self.composerAnchorID)
+        .preference(key: ScaffoldScrollRequestKey.self,
+                    value: composerFocused ? ScaffoldScrollRequest(id: Self.composerAnchorID, tick: composerScrollTick) : nil)
+        .onChangeCompat(of: draft) { _ in
+            if composerFocused { composerScrollTick += 1 }
+        }
+        .onChangeCompat(of: composerFocused) { focused in
+            guard focused else { return }
+            // After the keyboard has risen, so the scroll lands above it.
+            Task {
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                composerScrollTick += 1
+            }
+        }
     }
+
+    /// The composer's scroll anchor.
+    private static let composerAnchorID = "coach.composer"
 
     // MARK: - K4: Voice input (iOS only)
 

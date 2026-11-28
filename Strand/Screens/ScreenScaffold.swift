@@ -93,6 +93,11 @@ struct ScreenScaffold<Content: View, Trailing: View>: View {
             withAnimation(.easeOut(duration: 0.35)) { proxy.scrollTo(screenScaffoldTopAnchorID, anchor: .top) }
         }
         #endif
+        // A screen's request to bring one of its views to the bottom of the visible area (personal fork).
+        .onPreferenceChange(ScaffoldScrollRequestKey.self) { request in
+            guard let request else { return }
+            proxy.scrollTo(request.id, anchor: .bottom)
+        }
         }
     }
 
@@ -255,6 +260,22 @@ struct DataPendingNote: View {
 /// Zero-height scroll-to-top target id. File scope, not a `static` on `ScreenScaffold` — the latter is
 /// generic (`<Content, Trailing>`) and Swift forbids stored static properties on generic types.
 private let screenScaffoldTopAnchorID = "screenScaffold.top"
+
+/// A request from a screen's content to scroll its `ScreenScaffold` so the view with `id` sits at the bottom
+/// of the visible area (personal fork). The content cannot reach the scaffold's scroll proxy, so it asks
+/// through a preference; `tick` changes per request, so the same view can be asked for again.
+struct ScaffoldScrollRequest: Equatable {
+    var id: String
+    var tick: Int
+}
+
+/// Carries the latest `ScaffoldScrollRequest` up to the scaffold.
+struct ScaffoldScrollRequestKey: PreferenceKey {
+    static let defaultValue: ScaffoldScrollRequest? = nil
+    static func reduce(value: inout ScaffoldScrollRequest?, nextValue: () -> ScaffoldScrollRequest?) {
+        value = nextValue() ?? value
+    }
+}
 
 private struct ScrollToTopSignalKey: EnvironmentKey {
     static let defaultValue: Int = 0
